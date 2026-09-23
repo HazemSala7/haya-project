@@ -1,0 +1,74 @@
+name: haya
+description: "أكاديمية الحياة للتأهيل — تطبيق الأهل والأخصائيات والإدارة"
+publish_to: 'none'
+
+# Android reads the left side as versionName and the right as versionCode. The
+# code has to climb on every build a phone is asked to install over an older
+# one, or the install is refused with no useful message.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Arabic month and weekday names come from here rather than from a table in
+  # this repository. `intl` is what `flutter_localizations` already depends on.
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+
+  # Interceptors are the reason for dio over `http`: the bearer token and the
+  # sign-out-on-401 rule belong in one place, not repeated at every call site.
+  dio: ^5.9.2
+
+  # Async state that knows how to be loading, failed or stale — which is what
+  # every screen here is. The same library and version as schools/mobile, so
+  # the two apps on this server think about a request the same way.
+  flutter_riverpod: ^2.6.1
+
+  # The session token and the cached profile.
+  shared_preferences: ^2.3.3
+
+  # A photo or a clip from the session, straight from the specialist's phone.
+  # On Android 13+ this opens the system photo picker, which needs no storage
+  # permission at all.
+  image_picker: ^1.1.2
+
+  # Session clips. Played from the API with an Authorization header rather
+  # than a token in the URL — see AttachmentVideo.
+  video_player: ^2.10.0
+
+  # Calling a parent from the child's file.
+  url_launcher: ^6.3.1
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/brand/logo.png
+    - assets/brand/mark.png
+
+  fonts:
+    # The face the web dashboard uses, so the two clients are recognisably one
+    # academy. Cairo ships only as a variable font; declaring the same file at
+    # each weight is how Flutter is asked to read the wght axis.
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo.ttf
+          weight: 400
+        - asset: assets/fonts/Cairo.ttf
+          weight: 600
+        - asset: assets/fonts/Cairo.ttf
+          weight: 700
+        - asset: assets/fonts/Cairo.ttf
+          weight: 800

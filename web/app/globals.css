@@ -1,0 +1,490 @@
+@import "tailwindcss";
+
+/*
+ * An academy for children, read by three very different people: a specialist
+ * on a tablet between two sessions, an office manager at a desk, and a mother
+ * on a phone at ten at night wanting to know how her son's day went.
+ *
+ * The phone is the one that sets the type size. Everything here is a step
+ * larger and softer than a desk app would use, and the report screen in
+ * particular is set at reading sizes rather than dashboard sizes — it is
+ * prose, and it is the reason the family opens the app at all.
+ *
+ * ---------------------------------------------------------------------------
+ * The colours come from the academy's own logo, sampled from the file rather
+ * than guessed: a tree whose canopy is half brain, in teal, soft blue and sage.
+ *
+ *   #27908b  the teal of the Arabic wordmark   → the brand
+ *   #a8ccd8  the blue of the brain              → the calm accent
+ *   #c0cca8  the sage of the trunk and branches → the warm accent
+ *   #6c8484  the slate of the falling leaves    → a muted accent
+ *
+ * ---------------------------------------------------------------------------
+ */
+@theme {
+  --font-sans: "Cairo", "Segoe UI", system-ui, sans-serif;
+
+  --color-ink: oklch(0.24 0.015 200);
+  --color-ink-soft: oklch(0.38 0.015 200);
+  --color-muted: oklch(0.53 0.015 200);
+  --color-line: oklch(0.92 0.008 200);
+  --color-line-soft: oklch(0.955 0.006 200);
+  --color-surface: oklch(0.985 0.005 195);
+  --color-panel: oklch(1 0 0);
+
+  /*
+   * The wordmark teal, exactly as it appears in the logo. Used for every piece
+   * of chrome — buttons, links, the active menu item, the hero wash.
+   *
+   * It is NOT used for data marks: see --viz-brand below.
+   */
+  --color-brand: #27908b;
+  --color-brand-soft: #eaf4f3;
+  --color-brand-deep: #1b6a66;
+
+  /* The brain's blue and the tree's sage, for surfaces that want warmth
+     without shouting — hero washes, avatar chips, empty states. */
+  --color-sky: #a8ccd8;
+  --color-sky-soft: #eef5f8;
+  --color-sage: #c0cca8;
+  --color-sage-soft: #f3f6ec;
+  --color-leaf: #6c8484;
+
+  --color-good: #00908b;
+  --color-good-soft: #e8f5f4;
+  --color-warn: #d99a1a;
+  --color-warn-soft: #fdf5e4;
+  --color-bad: #b03030;
+  --color-bad-soft: #fbeceb;
+
+  /* The red band. Loud on purpose — see MedicalAlert in components/ui.tsx. */
+  --color-alert: #b03030;
+  --color-alert-soft: #fbeceb;
+
+  /*
+   * Elevation.
+   *
+   * Every shadow is tinted with the brand's own teal rather than black. A
+   * neutral drop shadow on a coloured page reads as grey dirt under the card;
+   * a shadow carrying a little of the surface's hue reads as depth. They are
+   * also very soft and very wide — this is a calm app for a tired reader, not
+   * a trading desk.
+   */
+  --shadow-soft: 0 1px 2px rgb(27 106 102 / 0.04), 0 2px 6px rgb(27 106 102 / 0.05);
+  --shadow-card: 0 1px 2px rgb(27 106 102 / 0.05), 0 4px 14px -4px rgb(27 106 102 / 0.09);
+  --shadow-lift: 0 2px 4px rgb(27 106 102 / 0.06), 0 12px 28px -8px rgb(27 106 102 / 0.16);
+  --shadow-float: 0 8px 20px -6px rgb(27 106 102 / 0.14), 0 24px 48px -12px rgb(27 106 102 / 0.2);
+  --shadow-glow: 0 4px 14px -2px rgb(39 144 139 / 0.42);
+}
+
+/*
+ * Chart colours — computed and validated, never eyeballed.
+ *
+ * `--viz-brand` is NOT the same value as `--color-brand`. The logo's teal
+ * (#27908b) sits at chroma 0.092, under the 0.1 floor a categorical hue has to
+ * clear, and the validator reports it as reading gray next to other marks. It
+ * is the right colour for a button and the wrong one for a line on a chart.
+ *
+ * #00908b is its nearest sibling that passes — same green, same blue, the red
+ * channel dropped to 0. Side by side they are the same teal; on a chart one
+ * holds its own and the other does not.
+ */
+:root {
+  --viz-brand: #00908b;
+
+  /*
+   * Attendance — status, not identity: held, absent, excused. Always shipped
+   * with a written label, never colour alone.
+   *
+   *   node scripts/validate_palette.js "#00908b,#b03030,#d99a1a" \
+   *     --mode light --surface "#ffffff" --pairs all
+   *
+   * ALL CHECKS PASS: worst CVD ΔE 12.7 (deuteranopia), worst normal-vision
+   * ΔE 25.0, every slot inside the lightness band and over 3:1 on white.
+   */
+  --viz-held: #00908b;
+  --viz-absent: #b03030;
+  --viz-excused: #d99a1a;
+
+  /*
+   * The four programmes — identity, so a categorical set.
+   *
+   *   node scripts/validate_palette.js "#00908b,#eb6834,#2a78d6,#c2559b" \
+   *     --mode light --surface "#ffffff" --pairs adjacent
+   *
+   * ALL CHECKS PASS: worst adjacent CVD ΔE 9.4 (protanopia), worst
+   * normal-vision ΔE 22.7.
+   *
+   * The *adjacent* pairlist is the right gate because these only ever appear
+   * as stacked segments, grouped bars and lines — never as scattered points
+   * where any two can end up side by side. Under `--pairs all` no four-hue
+   * ordering clears the floors; the skill's own reference palette says the
+   * same and caps those forms at three.
+   *
+   * The order is the safety mechanism, not decoration: teal↔magenta and
+   * blue↔magenta are the pairs that fail when the slots are shuffled.
+   */
+  --viz-speech: #00908b;
+  --viz-occupational: #eb6834;
+  --viz-behavioral: #2a78d6;
+  --viz-special-ed: #c2559b;
+
+  /*
+   * The prompt scale, 0..4.
+   *
+   * Ordered — refused, full help, partial help, verbal prompt, independent —
+   * so an ordinal ramp: one hue, monotone lightness, never five identities.
+   * Darker means the child needed less holding, so the weight of a mark lands
+   * before its label is read. Re-hued onto the logo's teal.
+   *
+   *   node scripts/validate_palette.js "#71c5c2,#33aba8,#00908b,#007270,#005453" \
+   *     --mode light --surface "#ffffff" --ordinal
+   *
+   * ALL CHECKS PASS: monotone light→dark, every ΔL ≥ 0.06, hue spread 3°,
+   * light end 2.01:1 on white — above the 2:1 floor the surface-most step of
+   * an ordinal ramp has to clear to stay visible at all.
+   */
+  --viz-level-0: #71c5c2;
+  --viz-level-1: #33aba8;
+  --viz-level-2: #00908b;
+  --viz-level-3: #007270;
+  --viz-level-4: #005453;
+
+  /* Chrome: a hairline one step off the surface, and never dashed. */
+  --viz-grid: #e9f0ef;
+  --viz-axis: #cfdcdb;
+}
+
+/*
+ * The page itself.
+ *
+ * Two very wide, very faint blooms — the brain's blue at the top of the reading
+ * side, the tree's sage at the far bottom — over an off-white ground. They are
+ * fixed, so they behave like paper the content scrolls across rather than a
+ * gradient that slides away on the second screenful.
+ *
+ * The strength is deliberate: this faint, a white card sitting on top reads as
+ * lifted off the page, which is the entire job. Three times stronger and it
+ * would be a decorated background, and every number on it would be harder to
+ * read.
+ */
+html {
+  background-color: var(--color-surface);
+  background-image:
+    radial-gradient(80rem 40rem at 100% -10%, rgb(168 204 216 / 0.28), transparent 60%),
+    radial-gradient(60rem 40rem at -10% 110%, rgb(192 204 168 / 0.24), transparent 60%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/*
+ * One focus ring for the whole app, on `:focus-visible` only — so it appears
+ * for a keyboard and never as a stray outline after a mouse click.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* A scrollbar that belongs to this app rather than to the operating system. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-brand) 28%, transparent) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-brand) 24%, transparent);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--color-brand) 42%, transparent);
+  background-clip: content-box;
+}
+
+/*
+ * Digits stay Western (012, not ٠١٢) everywhere a number is compared or
+ * counted. A file number read down a phone line and a goal scored 3 out of 4
+ * are both misread when half the app uses one set and half the other.
+ */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/*
+ * The headline number on a tile.
+ *
+ * Tighter tracking than the body, because Cairo's default spacing is set for
+ * running text and a 2rem figure set at it looks loose and unconfident.
+ */
+/*
+ * Deliberately carries no line-height. This class sits outside Tailwind's
+ * layers, so anything it did set would beat a `leading-*` utility written
+ * beside it — and these tiles hold both single-line figures and wrapping text
+ * like "٠ — رفض / ما استجاب", which need different leading. Each use site
+ * sets its own.
+ */
+.figure-xl {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/*
+ * The report a family reads. Set as prose, not as UI: longer measure, looser
+ * leading, and a size that survives being read one-handed on a phone.
+ */
+.report-prose {
+  font-size: 0.975rem;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+/* -------------------------------------------------------------------------
+ * Surfaces
+ *
+ * Written as plain classes rather than repeated utility strings because every
+ * card, figure and tile in the app shares them — one definition to change when
+ * the elevation is wrong, instead of forty.
+ * ---------------------------------------------------------------------- */
+
+.surface {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-card);
+}
+
+/*
+ * The hairline of white along a card's top edge.
+ *
+ * It is the oldest trick in interface drawing and still the one that does the
+ * most: it reads as light landing on a raised edge, and it is what separates a
+ * card that sits on the page from a rectangle cut out of it.
+ */
+.sheen {
+  position: relative;
+}
+
+.sheen::before {
+  content: "";
+  position: absolute;
+  inset-inline: 1rem;
+  top: 0;
+  height: 1px;
+  border-radius: 9999px;
+  background: linear-gradient(to left, transparent, rgb(255 255 255 / 0.9), transparent);
+  pointer-events: none;
+}
+
+/* Anything clickable that is a surface rather than a button. */
+.raise {
+  transition:
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s ease;
+}
+
+.raise:hover {
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--color-brand) 26%, var(--color-line));
+}
+
+/*
+ * The coloured rail down a tile's reading edge.
+ *
+ * A tone carried on a 3px rail instead of a whole tinted background: the status
+ * still lands in peripheral vision, but the number sits on white, where it has
+ * the contrast it needs. Four red-washed tiles in a row is a wall; four white
+ * tiles with red rails is a list with one urgent item on it.
+ */
+.rail {
+  position: relative;
+  overflow: hidden;
+}
+
+.rail::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: var(--rail, var(--color-brand));
+}
+
+/* -------------------------------------------------------------------------
+ * Motion
+ *
+ * One entrance, used everywhere, and switched off entirely for anyone who has
+ * asked their system for less of it. Nothing in this app animates on a loop: a
+ * dashboard that keeps moving is a dashboard nobody can read.
+ * ---------------------------------------------------------------------- */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+/*
+ * A row of tiles that arrives one after another instead of all at once.
+ *
+ * Written out rather than computed because `sibling-index()` is too new to
+ * rely on, and eight is more tiles than any row in this app holds. Anything
+ * past the eighth simply arrives with the eighth, which is correct — by then
+ * the cascade has done its job and a longer stagger is just a slower page.
+ */
+.rise-grid > * {
+  animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.rise-grid > *:nth-child(1) {
+  animation-delay: 40ms;
+}
+.rise-grid > *:nth-child(2) {
+  animation-delay: 95ms;
+}
+.rise-grid > *:nth-child(3) {
+  animation-delay: 150ms;
+}
+.rise-grid > *:nth-child(4) {
+  animation-delay: 205ms;
+}
+.rise-grid > *:nth-child(5) {
+  animation-delay: 260ms;
+}
+.rise-grid > *:nth-child(6) {
+  animation-delay: 315ms;
+}
+.rise-grid > *:nth-child(7) {
+  animation-delay: 370ms;
+}
+.rise-grid > *:nth-child(n + 8) {
+  animation-delay: 425ms;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pop {
+  animation: pop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes sweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* The grey bar that stands in for a number that has not arrived yet. */
+.skeleton {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-line-soft) 25%,
+    color-mix(in oklab, var(--color-sky) 22%, var(--color-line-soft)) 37%,
+    var(--color-line-soft) 63%
+  );
+  background-size: 200% 100%;
+  animation: sweep 1.4s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .rise-grid > *,
+  .pop,
+  .skeleton {
+    animation: none;
+  }
+
+  .raise:hover {
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * The logo's own wash — the brain's blue into the tree's sage, at the strength
+ * of a watermark, with a soft highlight where the mark sits. Behind a greeting
+ * it reads as the academy's paper; any stronger and it competes with the
+ * numbers sitting on it.
+ */
+.brand-wash {
+  background-image:
+    radial-gradient(28rem 14rem at 92% -40%, rgb(255 255 255 / 0.75), transparent 70%),
+    linear-gradient(
+      to left,
+      color-mix(in oklab, var(--color-sky) 40%, transparent),
+      color-mix(in oklab, var(--color-sage) 26%, transparent) 55%,
+      transparent 92%
+    );
+}
+
+@media print {
+  /* Periodic reports get printed and taken to the school and the doctor. */
+  .no-print {
+    display: none !important;
+  }
+
+  html {
+    background: white;
+    background-image: none;
+  }
+
+  body {
+    background: white;
+  }
+
+  .print-plain,
+  .surface {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .rise,
+  .pop {
+    animation: none !important;
+  }
+}
