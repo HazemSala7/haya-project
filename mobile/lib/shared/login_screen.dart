@@ -133,8 +133,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TextField(
                       controller: _emailController,
                       enabled: !_busy,
+                      /*
+                       * Either, and the number in any shape.
+                       *
+                       * This promise was a lie for a while: the field offered
+                       * «أو رقم الهاتف» while AuthController validated a strict
+                       * email, so a specialist who typed the number she had been
+                       * given was told her address was invalid. The server takes
+                       * both now — see AuthController::byPhone — and a keypad is
+                       * a much better place to type ten digits than an address.
+                       */
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(hintText: 'البريد الإلكتروني أو رقم الهاتف'),
+                      decoration: const InputDecoration(
+                        hintText: 'رقم الهاتف أو البريد الإلكتروني',
+                      ),
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 14),

@@ -41,7 +41,9 @@ class StaffController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['nullable', 'string', 'min:8'],
+            // Six, not eight: these are handed over on a slip and typed
+            // once on a phone keypad by somebody who did not choose them.
+            'password' => ['nullable', 'string', 'min:6'],
             'role' => ['required', Rule::in(array_column(Role::cases(), 'value'))],
             'phone' => ['nullable', 'string', 'max:32'],
             'specialty' => ['nullable', Rule::in(Specialty::values())],
@@ -153,7 +155,9 @@ class StaffController extends Controller
     public function resetPassword(Request $request, User $user): JsonResponse
     {
         $data = $request->validate([
-            'password' => ['nullable', 'string', 'min:8'],
+            // Six, not eight: these are handed over on a slip and typed
+            // once on a phone keypad by somebody who did not choose them.
+            'password' => ['nullable', 'string', 'min:6'],
         ]);
 
         $password = $data['password'] ?? Str::password(10, symbols: false);

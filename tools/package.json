@@ -1,0 +1,6 @@
+{
+  "name": "haya-tools",
+  "private": true,
+  "type": "module",
+  "dependencies": { "basic-ftp": "^5.0.5" }
+}

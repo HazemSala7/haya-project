@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# The release signing key. Whoever holds these can ship an update that
+# installs over the app; losing them means no update can ever install again.
+android/key.properties
+android/*.jks
