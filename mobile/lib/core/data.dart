@@ -54,6 +54,15 @@ final studentProvider = FutureProvider.autoDispose.family<StudentFile, int>((ref
   );
 });
 
+/// What closing this account would do, computed by the server.
+///
+/// Not cached: a specialist who writes her first report today must not be told
+/// tomorrow, from a stale read, that her account is still erasable.
+final accountPreviewProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  final data = await ref.watch(apiProvider).get('/auth/account');
+  return J.map(data) ?? const {};
+});
+
 /// The children this account may read.
 ///
 /// The API scopes it: a specialist gets the ones she has an active programme
@@ -112,7 +121,10 @@ final studentSessionsProvider =
   return J.list(body['data'], TherapySession.fromJson);
 });
 
-final sessionProvider = FutureProvider.autoDispose.family<TherapySession, int>((ref, id) async {
+/// One therapy session. Named for its kind because `sessionProvider` is the
+/// signed-in session over in auth/, and the barrel had to hide one of them
+/// to compile — which quietly made `sessionProvider` mean the wrong thing.
+final therapySessionProvider = FutureProvider.autoDispose.family<TherapySession, int>((ref, id) async {
   final data = await ref.watch(apiProvider).get('/sessions/$id');
   return TherapySession.fromJson(J.map(data) ?? const {});
 });

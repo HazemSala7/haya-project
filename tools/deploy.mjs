@@ -70,12 +70,12 @@ const NEVER = [
   /(^|\/)node_modules\//,
 ];
 
-const walk = (dir, out = []) => {
+const walk = (dir, out = [], from = join(ROOT, "api")) => {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
-    const rel = relative(join(ROOT, "api"), full).split("\\").join("/");
+    const rel = relative(from, full).split("\\").join("/");
     if (NEVER.some((p) => p.test(rel))) continue;
-    statSync(full).isDirectory() ? walk(full, out) : out.push({ full, rel });
+    statSync(full).isDirectory() ? walk(full, out, from) : out.push({ full, rel });
   }
   return out;
 };
@@ -105,17 +105,45 @@ try {
     process.exit(0);
   }
 
-  let files = walk(join(ROOT, "api"));
-  if (only) files = files.filter((f) => only.some((p) => f.rel === p || f.rel.startsWith(`${p}/`)));
+  /*
+   * Two trees, two destinations.
+   *
+   *   api/          → /haya/_app   the Laravel application
+   *   .deploy/haya/ → /haya        what Apache serves directly: the front
+   *                                controller, and the privacy policy both app
+   *                                stores check without an account
+   *
+   * The second is reached with `--paths=public`, because it is deployed on a
+   * different rhythm from the API: once, and then only when the policy changes.
+   */
+  let files = walk(join(ROOT, "api")).map((file) => ({
+    ...file,
+    remote: posix.join(base, "_app", file.rel),
+  }));
 
-  console.log(`\n  api   ${files.length} files  →  ${base}/_app\n`);
+  const publicRoot = join(ROOT, ".deploy", "haya");
+  if (existsSync(publicRoot)) {
+    files = files.concat(
+      walk(publicRoot, [], publicRoot).map((file) => ({
+        ...file,
+        rel: `public/${file.rel}`,
+        remote: posix.join(base, file.rel),
+      })),
+    );
+  }
+
+  if (only) {
+    files = files.filter((f) => only.some((p) => f.rel === p || f.rel.startsWith(`${p}/`)));
+  }
+
+  console.log(`\n  ${files.length} files  →  ${base}\n`);
 
   let sent = 0;
   let same = 0;
 
   for (const file of files) {
     const local = readFileSync(file.full);
-    const remote = posix.join(base, "_app", file.rel);
+    const remote = file.remote;
 
     // Read the remote copy and compare content. A missing file throws, which
     // is simply "not there yet".

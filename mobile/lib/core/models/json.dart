@@ -48,4 +48,18 @@ abstract final class J {
         if (item is Map) parse(Map<String, dynamic>.from(item)),
     ];
   }
+
+  /// A list of plain strings.
+  ///
+  /// `list` above drops anything that is not a Map, which is right for rows of
+  /// records and silently wrong for a list of sentences — the account-deletion
+  /// screen rendered its headings with nothing under them because every line
+  /// the server sent was thrown away on the way in.
+  static List<String> strings(Object? value) {
+    if (value is! List) return const [];
+    return [
+      for (final item in value)
+        if (item != null) '$item',
+    ];
+  }
 }

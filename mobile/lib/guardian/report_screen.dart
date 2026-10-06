@@ -25,13 +25,13 @@ class ReportScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider(sessionId));
+    final session = ref.watch(therapySessionProvider(sessionId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('تقرير الجلسة')),
       body: AsyncView(
         value: session,
-        onRetry: () => reload(ref, sessionProvider(sessionId).future),
+        onRetry: () => reload(ref, therapySessionProvider(sessionId).future),
         data: (s) => ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [

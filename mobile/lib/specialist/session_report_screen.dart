@@ -122,13 +122,13 @@ class _SessionReportScreenState extends ConsumerState<SessionReportScreen> {
       });
 
   void _refresh() {
-    reload(ref, sessionProvider(widget.sessionId).future);
+    reload(ref, therapySessionProvider(widget.sessionId).future);
     reload(ref, dashboardProvider.future);
   }
 
   @override
   Widget build(BuildContext context) {
-    final session = ref.watch(sessionProvider(widget.sessionId));
+    final session = ref.watch(therapySessionProvider(widget.sessionId));
 
     return Scaffold(
       appBar: AppBar(
@@ -143,7 +143,7 @@ class _SessionReportScreenState extends ConsumerState<SessionReportScreen> {
       ),
       body: AsyncView(
         value: session,
-        onRetry: () => reload(ref, sessionProvider(widget.sessionId).future),
+        onRetry: () => reload(ref, therapySessionProvider(widget.sessionId).future),
         data: (s) {
           _fill(s);
 

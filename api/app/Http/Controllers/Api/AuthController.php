@@ -98,6 +98,130 @@ class AuthController extends Controller
         return response()->json(['message' => 'تم تغيير كلمة المرور.']);
     }
 
+
+    /**
+     * What closing this account would do, before anything is done.
+     *
+     * Both stores require that a person can close their account from inside
+     * the app, and a screen that asks "هل أنت متأكد؟" without saying what is
+     * about to disappear is not consent. The answer differs by who is asking,
+     * so the server computes it and the screen prints what it is told rather
+     * than carrying a second copy of the rule.
+     */
+    public function accountPreview(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->isGuardian()) {
+            $children = $user->children()->pluck('name');
+
+            return response()->json(['data' => [
+                'can_delete' => true,
+                'title' => 'حذف حسابك',
+                'what_goes' => [
+                    'حسابك وكلمة مرورك، وكل جلسات الدخول المفتوحة.',
+                    'ربطك بأطفالك — لن تصلك تقاريرهم بعد اليوم.',
+                ],
+                /*
+                 * The child's record is the academy's, not the parent's.
+                 *
+                 * Saying so plainly is the point: a mother deleting her login
+                 * is not asking for her son's therapy history to be destroyed,
+                 * and an app that quietly did that would be deleting a
+                 * clinical record on a misunderstanding.
+                 */
+                'what_stays' => [
+                    'ملف ' . ($children->count() === 1 ? $children->first() : 'أطفالك')
+                        . ' في الأكاديمية — الجلسات والتقارير والأهداف. هو سجلّ المركز عن خدمة قُدّمت، وليس بيانات حسابك.',
+                ],
+                'children' => $children,
+            ]]);
+        }
+
+        // Staff. What they have written is the reason this is not symmetrical.
+        $sessions = $user->sessions()->withTrashed()->count();
+        $programmes = $user->enrollments()->count();
+
+        if ($sessions === 0 && $programmes === 0) {
+            return response()->json(['data' => [
+                'can_delete' => true,
+                'title' => 'حذف حسابك',
+                'what_goes' => ['حسابك وكلمة مرورك، وكل جلسات الدخول المفتوحة.'],
+                'what_stays' => [],
+                'children' => [],
+            ]]);
+        }
+
+        return response()->json(['data' => [
+            'can_delete' => false,
+            'title' => 'إغلاق حسابك',
+            'what_goes' => [
+                'كل جلسات الدخول المفتوحة — ولن تستطيع الدخول بعدها.',
+            ],
+            /*
+             * Her name is on reports families have already read. Removing it
+             * would leave those reports unsigned, which is worse for the
+             * families than a dormant row in the staff table — so the account
+             * is closed rather than erased, and she is told why.
+             */
+            'what_stays' => [
+                "اسمك على {$sessions} جلسة و{$programmes} برنامج. التقارير التي أرسلتِها وصلت الأهل موقّعة باسمك، "
+                    . 'وحذفه يترك تلك التقارير بلا كاتب — لذلك يُغلق الحساب ولا يُمحى.',
+            ],
+            'children' => [],
+        ]]);
+    }
+
+    /**
+     * Close it.
+     *
+     * A guardian's account goes; a member of staff who has written anything is
+     * deactivated instead, for the reason the preview gave her. Either way she
+     * is signed out of every device before this returns.
+     */
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            // Not ceremony: this is reached from a phone in a pocket, and the
+            // password is the only thing proving the person holding it is the
+            // one closing the account.
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($data['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'password' => 'كلمة المرور غير صحيحة.',
+            ]);
+        }
+
+        if ($user->isGuardian()) {
+            $user->children()->detach();
+            $user->tokens()->delete();
+            $user->delete();
+
+            return response()->json(['message' => 'تم حذف حسابك.']);
+        }
+
+        $erasable = $user->sessions()->withTrashed()->count() === 0
+            && $user->enrollments()->count() === 0;
+
+        if ($erasable) {
+            $user->tokens()->delete();
+            $user->delete();
+
+            return response()->json(['message' => 'تم حذف حسابك.']);
+        }
+
+        $user->forceFill(['is_active' => false])->save();
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'تم إغلاق حسابك. لإعادة فتحه راجع إدارة الأكاديمية.',
+        ]);
+    }
+
     /**
      * Everything the frontend needs to draw the right menu, and nothing more.
      *

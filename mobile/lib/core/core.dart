@@ -1,7 +1,7 @@
 // Core barrel exports
 export 'api/api_client.dart';
 export 'api/api_exception.dart';
-export 'auth/session.dart' hide sessionProvider;
+export 'auth/session.dart';
 export 'data.dart';
 export 'format.dart';
 export 'models/json.dart';

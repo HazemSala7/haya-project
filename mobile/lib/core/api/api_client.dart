@@ -110,8 +110,10 @@ class ApiClient {
         (data) => data is Map ? data['data'] ?? data : data,
       );
 
-  Future<dynamic> delete(String path) => _send(
-        () => _dio.delete<dynamic>(path),
+  /// A DELETE may carry a body: closing your own account sends the password
+  /// that proves the person holding the phone is the one closing it.
+  Future<dynamic> delete(String path, {Object? body}) => _send(
+        () => _dio.delete<dynamic>(path, data: body),
         (data) => data,
       );
 

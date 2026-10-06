@@ -21,6 +21,17 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::post('auth/password', [AuthController::class, 'changePassword']);
 
+    /*
+     * Closing your own account, from inside the app.
+     *
+     * Required by both stores of any app that holds accounts, and the preview
+     * is not decoration: what deletion means differs between a parent and a
+     * specialist whose name is signed on reports families have read, and the
+     * screen prints the server's answer rather than guessing at it.
+     */
+    Route::get('auth/account', [AuthController::class, 'accountPreview']);
+    Route::delete('auth/account', [AuthController::class, 'deleteAccount']);
+
     // Three different screens behind one path — see DashboardController.
     Route::get('dashboard', DashboardController::class);
 
