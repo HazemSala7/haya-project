@@ -52,11 +52,11 @@ class _Root extends ConsumerWidget {
   }
 
   Widget _shellFor(Profile user) => switch (user.role) {
-        AppRole.guardian => const GuardianShell(),
-        AppRole.specialist => const SpecialistShell(),
-        AppRole.admin => const AdminShell(),
-        AppRole.unknown => const _NoShell(),
-      };
+    AppRole.guardian => const GuardianShell(),
+    AppRole.specialist => const SpecialistShell(),
+    AppRole.admin => const AdminShell(),
+    AppRole.unknown => const _NoShell(),
+  };
 }
 
 class _Splash extends StatelessWidget {
@@ -64,10 +64,21 @@ class _Splash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: AppColors.canvas,
       body: Center(
-        child: SizedBox(width: 26, height: 26, child: CircularProgressIndicator(strokeWidth: 2.4)),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset('assets/brand/logo.png', width: 220, height: 220),
+            const SizedBox(height: 20),
+            const SizedBox(
+              width: 30,
+              height: 30,
+              child: CircularProgressIndicator(strokeWidth: 2.4),
+            ),
+          ],
+        ),
       ),
     );
   }

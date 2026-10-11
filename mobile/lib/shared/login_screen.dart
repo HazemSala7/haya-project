@@ -73,8 +73,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 80, 16, 0),
                 child: Column(
                   children: [
-                    Image.asset('assets/brand/mark.png', width: 120, height: 120),
-                    const SizedBox(height: 24),
+                    Image.asset(
+                      'assets/brand/logo.png',
+                      width: 280,
+                      height: 200,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 12),
                     const Text(
                       'أكاديمية الحياة',
                       style: TextStyle(
@@ -105,14 +110,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     if (_error != null) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.badSoft,
                           borderRadius: AppShape.control,
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline_rounded, size: 18, color: AppColors.bad),
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              size: 18,
+                              color: AppColors.bad,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -154,7 +166,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _passwordController,
                       enabled: !_busy,
                       obscureText: true,
-                      decoration: const InputDecoration(hintText: 'كلمة المرور'),
+                      decoration: const InputDecoration(
+                        hintText: 'كلمة المرور',
+                      ),
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 24),
@@ -164,7 +178,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.4,
+                                color: Colors.white,
+                              ),
                             )
                           : const Text('دخول'),
                     ),
