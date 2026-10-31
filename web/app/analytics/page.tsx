@@ -20,6 +20,7 @@ import {
   MOOD_LABELS,
   SPECIALTY_LABELS,
   levelColor,
+  monthDay,
   number,
   percent,
 } from "@/lib/format";
@@ -32,15 +33,8 @@ const SPECIALTY_COLOR: Record<string, string> = {
   special_ed: "var(--viz-special-ed)",
 };
 
-/** "٣ أغسطس" — a week is named by the Monday it starts on. */
-function weekLabel(iso: string): string {
-  const months = [
-    "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
-    "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
-  ];
-  const d = new Date(iso);
-  return `${d.getDate()} ${months[d.getMonth()]}`;
-}
+/** "٣ آب" — a week is named by the Monday it starts on. */
+const weekLabel = monthDay;
 
 /**
  * The analytics screen.

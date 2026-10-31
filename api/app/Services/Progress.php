@@ -144,6 +144,13 @@ class Progress
                 'best' => $levels->max(),
                 'delta' => $levels->isEmpty() ? null : $levels->last() - $goal->baseline,
                 /*
+                 * The same percentage the list shows, from the same line —
+                 * Goal::progressFrom. A parent who sees 75% on the child's
+                 * file and 67% on the goal's own screen stops believing
+                 * either number.
+                 */
+                'progress' => Goal::progressFrom($levels->last(), $goal->baseline, $goal->target),
+                /*
                  * The average of the last three, against the average of the
                  * three before them. A single session is noise — a child who
                  * slept badly scores a 1 on a goal he has held at 3 for a

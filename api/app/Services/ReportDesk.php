@@ -38,7 +38,7 @@ class ReportDesk
         $this->refuseIfPublished($session);
 
         $session->fill(array_intersect_key($data, array_flip([
-            'mood', 'activities', 'progress', 'difficulties', 'home_plan', 'private_notes',
+            'mood', 'activities', 'tools', 'progress', 'difficulties', 'home_plan', 'private_notes',
         ])));
 
         $session->save();

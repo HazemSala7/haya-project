@@ -113,11 +113,38 @@ function GoalScreen({ id }: { id: number }) {
                   : "نفس نقطة البداية"
           }
         />
-        <Stat label="عدد القياسات" value={number(summary.sessions)} />
         <Stat
           label="المطلوب"
           value={`${goal.target} — ${LEVEL_LABELS[goal.target]}`}
           tone="brand"
+        />
+
+        {/*
+          How much of the goal is covered — the figure the academy reports to a
+          family, and the one a specialist is asked about in a review.
+
+          It takes the tile the measurement count had, which was the least
+          useful of the four: the number of ratings is already visible under
+          the curve, and nobody has needed it before knowing whether the child
+          is getting there.
+        */}
+        <Stat
+          label="نسبة تحقيق الهدف"
+          value={summary.progress === null ? "—" : `${summary.progress}%`}
+          tone={
+            summary.progress === null
+              ? "plain"
+              : summary.progress >= 100
+                ? "good"
+                : summary.progress > 0
+                  ? "brand"
+                  : "warn"
+          }
+          hint={
+            summary.progress === null
+              ? "لسه ما انقاس"
+              : `من المسافة بين ${goal.baseline} و${goal.target} · ${number(summary.sessions)} قياس`
+          }
         />
       </div>
 

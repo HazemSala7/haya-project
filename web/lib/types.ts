@@ -47,6 +47,14 @@ export type Student = {
   grade: string | null;
   enrolled_at: string;
   status: "active" | "paused" | "graduated" | "withdrawn";
+  /**
+   * The agreed monthly subscription. Null until the office sets it — which is
+   * not the same as zero: an unpriced child is skipped by the monthly run and
+   * named, rather than billed nothing and read as settled.
+   *
+   * A decimal column, so it arrives as a string ("400.00").
+   */
+  monthly_fee: string | null;
   left_at: string | null;
   notes: string | null;
   enrollments_count?: number;
@@ -108,8 +116,19 @@ export type Goal = {
   sort_order: number;
   enrollment?: { id: number; specialty: Specialty };
   student?: Pick<Student, "id" | "name" | "file_number">;
-  /** Added by the list endpoint — latest score and distance from baseline. */
-  trend?: { latest: Level | null; delta: number | null; ratings: number };
+  /**
+   * Added by the list endpoint — latest score, distance from baseline, and how
+   * far along the goal is as a percentage of the distance it set out to cover.
+   *
+   * `progress` is null when nothing has been measured yet, and also when the
+   * target equals the baseline: there is no fraction of a zero distance.
+   */
+  trend?: {
+    latest: Level | null;
+    delta: number | null;
+    ratings: number;
+    progress: number | null;
+  };
 };
 
 export type GoalRating = {
@@ -153,6 +172,8 @@ export type TherapySession = {
 
   mood: Mood | null;
   activities: string | null;
+  /** What she worked with — cards, mirror, ball, a tablet app. */
+  tools: string | null;
   progress: string | null;
   difficulties: string | null;
   home_plan: string | null;
@@ -265,7 +286,87 @@ export type GoalCurve = {
     best: Level | null;
     delta: number | null;
     trend: "improving" | "steady" | "declining" | null;
+    /** Same percentage, same formula, as the goal's row on the child's file. */
+    progress: number | null;
   };
+};
+
+/* -------------------------------------------------------------------------
+ * The money
+ *
+ * A monthly subscription per child, issued by the office and due on the first.
+ * Every decimal arrives as a string from Laravel, which is deliberate —
+ * see `money()` in lib/format.ts.
+ * ---------------------------------------------------------------------- */
+
+export type InvoiceStatus = "unpaid" | "partial" | "paid" | "overdue";
+
+export type PaymentMethod = "cash" | "transfer" | "cheque";
+
+export type Payment = {
+  id: number;
+  receipt_no: string;
+  invoice_id: number;
+  amount: string;
+  paid_on: string;
+  method: PaymentMethod;
+  method_label: string;
+  reference: string | null;
+  note: string | null;
+  receiver?: { id: number; name: string } | null;
+};
+
+export type Invoice = {
+  id: number;
+  number: string;
+  student_id: number;
+  /** The first day of the month being charged for. */
+  period: string;
+  period_label: string;
+  due_on: string;
+  amount: string;
+  discount: string;
+  total: string;
+  paid: string;
+  /** Computed by the model: what is still owed, never negative. */
+  due: number;
+  status: InvoiceStatus;
+  status_label: string;
+  note: string | null;
+  student?: Pick<Student, "id" | "name" | "file_number">;
+  payments?: Payment[];
+};
+
+/** What the office needs on screen before pressing «إصدار الشهر». */
+export type BillingSummary = {
+  period: string;
+  period_label: string;
+  issued: number;
+  issued_total: number;
+  /** How many children the button would charge, and for how much. */
+  pending: number;
+  pending_total: number;
+  unpriced: number;
+  /** Named rather than counted, so the office can act on the list. */
+  unpriced_students: { id: number; name: string }[];
+  outstanding_total: number;
+  outstanding_count: number;
+};
+
+/** What `POST /billing/issue` answers with. */
+export type IssueResult = {
+  period: string;
+  created: number;
+  total: number;
+  /** Who was not charged, and why — by name. */
+  skipped: { student: string; why: string }[];
+};
+
+/** One family's account: every month, and what is left. */
+export type StudentAccount = {
+  student: { id: number; name: string; file_number: string; monthly_fee: string | null };
+  balance: { billed: number; paid: number; due: number; months: number; overdue: number };
+  invoices: Invoice[];
 };
 
 export type GuardianDashboard = {
@@ -373,6 +474,6 @@ export type NavCount = { total: number; attention: number };
 
 /** Keyed by the nav item's `count` name — absent keys simply draw nothing. */
 export type NavCounts = Partial<Record<
-  "home" | "sessions" | "students" | "reports" | "messages" | "staff",
+  "home" | "sessions" | "students" | "reports" | "messages" | "staff" | "finance",
   NavCount
 >>;

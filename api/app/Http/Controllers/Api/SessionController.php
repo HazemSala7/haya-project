@@ -142,6 +142,9 @@ class SessionController extends Controller
         $data = $request->validate([
             'mood' => ['nullable', Rule::in(['calm', 'happy', 'tired', 'agitated', 'crying', 'resistant'])],
             'activities' => ['nullable', 'string', 'max:5000'],
+            // Which cards, which board, which app — see the migration that
+            // added the column for why it is free text.
+            'tools' => ['nullable', 'string', 'max:2000'],
             'progress' => ['nullable', 'string', 'max:5000'],
             'difficulties' => ['nullable', 'string', 'max:5000'],
             'home_plan' => ['nullable', 'string', 'max:5000'],

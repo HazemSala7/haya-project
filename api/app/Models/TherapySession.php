@@ -19,7 +19,7 @@ class TherapySession extends Model
     protected $fillable = [
         'number', 'student_id', 'enrollment_id', 'specialist_id', 'specialty',
         'scheduled_at', 'duration_minutes', 'status', 'absence_reason',
-        'mood', 'activities', 'progress', 'difficulties', 'home_plan',
+        'mood', 'activities', 'tools', 'progress', 'difficulties', 'home_plan',
         'private_notes', 'report_status', 'published_at',
     ];
 

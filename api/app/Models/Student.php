@@ -16,6 +16,7 @@ class Student extends Model
         'file_number', 'name', 'birth_date', 'gender', 'national_id',
         'diagnosis', 'diagnosis_notes', 'medical_alert',
         'school', 'grade', 'enrolled_at', 'status', 'left_at', 'notes',
+        'monthly_fee',
     ];
 
     protected function casts(): array
@@ -24,6 +25,7 @@ class Student extends Model
             'birth_date' => 'date',
             'enrolled_at' => 'date',
             'left_at' => 'date',
+            'monthly_fee' => 'decimal:2',
         ];
     }
 

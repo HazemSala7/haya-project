@@ -7,17 +7,24 @@ import { useAuth } from "@/lib/auth";
 import { Button, ErrorNote, Field, Input } from "@/components/ui";
 
 /**
- * Three kinds of people sign in here and the demo accounts are printed on the
- * page, as they are across these systems — a product that asks for your email
- * before it will show you anything is a product with something to hide.
+ * Three kinds of people sign in here — the office, a specialist, and a mother.
+ *
+ * ---------------------------------------------------------------------------
+ * There are no demo accounts printed on this page, and there used to be.
+ *
+ * Printing them is the right call for a product demo: a landing page that
+ * asks for your email before it will show you anything is a page with
+ * something to hide. It is the wrong call the moment the thing behind the
+ * login stops being a demo. What is behind this one now is sixty real
+ * children — their diagnoses, their sessions, their mothers' phone numbers —
+ * and the academy's own staff sign in through this form. A list of working
+ * usernames beside a published password is not a friendly touch there; it is
+ * the front door left open with a note saying which key fits.
+ *
+ * If the academy ever wants a sales demo, it gets its own deployment with its
+ * own invented children, and that one can print whatever it likes.
  */
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-
-const DEMO = [
-  { label: "الإدارة", email: "admin@haya.test" },
-  { label: "أخصائية نطق", email: "rana@haya.test" },
-  { label: "ولي أمر", email: "sanaa@haya.test" },
-];
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -41,11 +48,6 @@ export default function LoginPage() {
     } finally {
       setBusy(false);
     }
-  }
-
-  function useDemo(demoEmail: string) {
-    setEmail(demoEmail);
-    setPassword("password");
   }
 
   return (
@@ -118,26 +120,14 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="mt-5 rounded-2xl border border-line bg-panel/85 p-4 shadow-card backdrop-blur">
-          <p className="text-xs font-semibold text-muted">
-            حسابات التجربة — كلمة المرور <span dir="ltr" className="font-bold text-ink">password</span>
-          </p>
-          <div className="mt-2.5 grid gap-1.5">
-            {DEMO.map((account) => (
-              <button
-                key={account.email}
-                type="button"
-                onClick={() => useDemo(account.email)}
-                className="group flex items-center justify-between gap-2 rounded-lg border border-line bg-panel px-3 py-2 text-right text-xs transition hover:border-brand/50 hover:bg-brand-soft hover:shadow-soft"
-              >
-                <span className="font-bold text-ink">{account.label}</span>
-                <span dir="ltr" className="text-muted transition group-hover:text-brand">
-                  {account.email}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Where the account comes from, since nothing on this page offers
+            one. A mother who cannot get in needs to know who to ask, not a
+            «نسيت كلمة المرور» link to an inbox the academy does not run. */}
+        <p className="mt-5 text-center text-xs leading-relaxed text-muted">
+          الحسابات تُفتح من إدارة الأكاديمية.
+          <br />
+          إذا ما قدرت تدخل، راجع الإدارة لإعادة ضبط كلمة المرور.
+        </p>
       </div>
     </div>
   );

@@ -18,9 +18,84 @@ export function percent(value: number | null | undefined): string {
   return `${Math.round(value)}%`;
 }
 
+/**
+ * «١,٢٠٠ ₪».
+ *
+ * Laravel sends a decimal column as a string ("400.00") on purpose — a float
+ * is the wrong type for money — so this takes either and never does
+ * arithmetic on what it is given.
+ *
+ * An unset figure is "—", never "0 ₪". A child whose fee has not been agreed
+ * and a child who owes nothing are different facts, and printing a zero for
+ * the first is how the second gets assumed.
+ *
+ * The academy charges in shekels and only in shekels; there is no currency
+ * column, and inventing one for a single-currency academy would be a column
+ * that is wrong the first time anybody fills it in.
+ */
+export function money(
+  value: string | number | null | undefined,
+  { zero = "—" }: { zero?: string } = {},
+): string {
+  if (value === null || value === undefined || value === "") return zero;
+
+  const figure = Number(value);
+  if (!Number.isFinite(figure)) return zero;
+
+  // Halves show when there are halves — 400 rather than 400.00, and 12.50
+  // rather than 13.
+  const fractions = Number.isInteger(figure) ? 0 : 2;
+
+  return `${figure.toLocaleString("en-US", {
+    minimumFractionDigits: fractions,
+    maximumFractionDigits: 2,
+  })} ₪`;
+}
+
+/* -------------------------------------------------------------------------
+ * The money
+ * ---------------------------------------------------------------------- */
+
+export const INVOICE_LABELS: Record<string, string> = {
+  unpaid: "ما تسدّدت",
+  partial: "مسدّدة جزئياً",
+  paid: "مسدّدة",
+  overdue: "متأخرة",
+};
+
+/**
+ * «متأخرة» is the only one that wears red.
+ *
+ * An unpaid invoice for the current month is not a problem — it is the normal
+ * state of a bill issued three days ago. Colouring it the same as a family
+ * three months behind is how a screen stops being read.
+ */
+export const INVOICE_TONES: Record<string, string> = {
+  unpaid: "bg-line/60 text-ink",
+  partial: "bg-warn-soft text-warn",
+  paid: "bg-good-soft text-good",
+  overdue: "bg-bad-soft text-bad",
+};
+
+export const METHOD_LABELS: Record<string, string> = {
+  cash: "نقداً",
+  transfer: "حوالة بنكية",
+  cheque: "شيك",
+};
+
+/**
+ * The months as the Levant writes them — «تشرين الأول», not «أكتوبر».
+ *
+ * Both sets are understood in Palestine, but only one can be on a screen at a
+ * time: an invoice row that reads «تشرين الأول 2026 · استحقاق 1 أكتوبر 2026»
+ * looks like two different dates, and a parent counting her months has to stop
+ * and translate. The API names the billed month in Levantine (see
+ * Invoice::monthName) because that is what the academy writes on paper, so the
+ * dashboard follows it rather than the other way round.
+ */
 const MONTHS = [
-  "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
-  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+  "كانون الثاني", "شباط", "آذار", "نيسان", "أيار", "حزيران",
+  "تموز", "آب", "أيلول", "تشرين الأول", "تشرين الثاني", "كانون الأول",
 ];
 
 const DAYS = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
@@ -31,21 +106,51 @@ function parse(value: string | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** 23 أغسطس 2026 */
+/** 23 آب 2026 */
 export function date(value: string | null | undefined): string {
   const d = parse(value);
   if (!d) return "—";
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-/** الأحد 23 أغسطس — for a diary, where the weekday is what is scanned for. */
+/** الأحد 23 آب — for a diary, where the weekday is what is scanned for. */
 export function dayDate(value: string | null | undefined): string {
   const d = parse(value);
   if (!d) return "—";
   return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
-/** 23 أغسطس، 10:30 */
+/**
+ * «تشرين الأول 2026» from "2026-10" — the month a bill is for.
+ *
+ * The API labels an invoice's own period the same way (Invoice::monthName),
+ * so a row and the picker above it name the month with the same words. This
+ * exists because a native `<input type="month">` labels itself in the
+ * browser's locale, not the page's: on an office machine set to English it
+ * reads "October 2026" beside «فواتير تشرين الأول 2026», which is two names
+ * for one month on one screen.
+ */
+export function monthLabel(ym: string): string {
+  const [year, month] = ym.split("-").map(Number);
+  const name = MONTHS[(month ?? 0) - 1];
+  return name ? `${name} ${year}` : ym;
+}
+
+/** 23 آب — a point on an axis, where the year is the chart's and not the tick's. */
+export function monthDay(value: string | null | undefined): string {
+  const d = parse(value);
+  if (!d) return "—";
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
+/** الأحد 23 آب 2026 — the whole thing, for the one line that says what today is. */
+export function fullDate(value: string | null | undefined): string {
+  const d = parse(value);
+  if (!d) return "—";
+  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** 23 آب، 10:30 */
 export function dateTime(value: string | null | undefined): string {
   const d = parse(value);
   if (!d) return "—";
@@ -73,30 +178,51 @@ export function relative(value: string | null | undefined): string {
   const past = diff < 0;
   const minutes = Math.round(Math.abs(diff) / 60000);
 
-  const phrase = (n: number, one: string, two: string, few: string, many: string) => {
-    if (n === 1) return one;
-    if (n === 2) return two;
-    if (n <= 10) return `${n} ${few}`;
-    return `${n} ${many}`;
-  };
-
   let unit: string;
 
   if (minutes < 1) return "الآن";
-  else if (minutes < 60) unit = phrase(minutes, "دقيقة", "دقيقتين", "دقائق", "دقيقة");
+  else if (minutes < 60) unit = plural(minutes, "دقيقة", "دقيقتين", "دقائق", "دقيقة");
   else if (minutes < 1440) {
     const hours = Math.round(minutes / 60);
-    unit = phrase(hours, "ساعة", "ساعتين", "ساعات", "ساعة");
+    unit = plural(hours, "ساعة", "ساعتين", "ساعات", "ساعة");
   } else if (minutes < 43200) {
     const days = Math.round(minutes / 1440);
-    unit = phrase(days, "يوم", "يومين", "أيام", "يوماً");
+    unit = plural(days, "يوم", "يومين", "أيام", "يوماً");
   } else {
     const months = Math.round(minutes / 43200);
-    unit = phrase(months, "شهر", "شهرين", "شهور", "شهراً");
+    unit = plural(months, "شهر", "شهرين", "شهور", "شهراً");
   }
 
   return past ? `قبل ${unit}` : `بعد ${unit}`;
 }
+
+/**
+ * Arabic counts in four shapes, not two.
+ *
+ * One, two, a few (3–10, which takes the plural), and many (11 and up, which
+ * goes back to the singular). "٦ طفل" and "٢ أطفال" are both wrong, and both
+ * are what a template literal produces — which is why this is a function and
+ * not a suffix somebody remembers to add.
+ *
+ * `one` and `two` carry no numeral, because Arabic does not put one there.
+ */
+export function plural(n: number, one: string, two: string, few: string, many: string): string {
+  if (n === 1) return one;
+  if (n === 2) return two;
+  if (n <= 10) return `${n} ${few}`;
+  return `${n} ${many}`;
+}
+
+/** «طفل واحد» · «طفلين» · «٦ أطفال» · «١٥ طفل» */
+export function childCount(n: number): string {
+  return plural(n, "طفل واحد", "طفلين", "أطفال", "طفل");
+}
+
+/** «فاتورة واحدة» · «فاتورتين» · «٤ فواتير» · «١٢ فاتورة» */
+export function invoiceCount(n: number): string {
+  return plural(n, "فاتورة واحدة", "فاتورتين", "فواتير", "فاتورة");
+}
+
 
 /* -------------------------------------------------------------------------
  * The prompt scale

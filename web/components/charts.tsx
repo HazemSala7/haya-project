@@ -412,3 +412,72 @@ export function AttendanceTable({
     </Table>
   );
 }
+
+/* -------------------------------------------------------------------------
+ * How far along a goal is
+ * ---------------------------------------------------------------------- */
+
+/**
+ * One goal's progress, as a percentage of the distance it set out to cover.
+ *
+ * From a baseline of 1 to a target of 4, a latest score of 3 is two thirds of
+ * the way — and that sentence is the whole reason this exists. The raw score
+ * means nothing on its own: a 3 is excellent from a baseline of 0 and a
+ * regression from a baseline of 4, and a parent handed "٣ من ٤" has no way to
+ * know which of the two she is being told.
+ *
+ * The number is computed by the API (Goal::progressFrom) and never here, so
+ * this screen, the printed report and the phone app cannot each round it their
+ * own way.
+ *
+ * The bar is redundant to the figure beside it, deliberately: the percentage
+ * is the fact, and the bar is what makes a column of goals scannable without
+ * reading any of them. Nothing here is carried by colour alone.
+ */
+export function GoalMeter({
+  progress,
+  width = 72,
+  label,
+}: {
+  /** 0–100, or null when nothing has been measured yet. */
+  progress: number | null;
+  width?: number;
+  /** Shown above the bar on the goal's own screen; omitted in a list. */
+  label?: string;
+}) {
+  if (progress === null) {
+    return <span className="text-xs text-muted">لسه ما انقاس</span>;
+  }
+
+  /*
+   * The full ramp, not a red-to-green one. These are the same five teals the
+   * prompt levels use — a goal at 20% is not a failure to be coloured in
+   * alarm, it is a goal early in its life, and the academy's own progression
+   * is the honest scale for it.
+   */
+  const fill =
+    progress >= 100
+      ? "var(--color-good)"
+      : progress >= 50
+        ? "var(--viz-level-3)"
+        : "var(--viz-level-1)";
+
+  return (
+    <span className="block" style={{ width }}>
+      {label && <span className="mb-0.5 block text-[11px] text-muted">{label}</span>}
+      <span className="flex items-center gap-1.5">
+        <span
+          className="h-1.5 flex-1 overflow-hidden rounded-full bg-line"
+          role="img"
+          aria-label={`${progress}% من الهدف`}
+        >
+          <span
+            className="block h-full rounded-full transition-[width] duration-700"
+            style={{ width: `${Math.max(2, progress)}%`, background: fill }}
+          />
+        </span>
+        <span className="tabular text-xs font-bold text-ink">{progress}%</span>
+      </span>
+    </span>
+  );
+}

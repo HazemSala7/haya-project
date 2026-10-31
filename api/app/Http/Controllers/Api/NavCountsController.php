@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Models\Invoice;
 use App\Models\Message;
 use App\Models\ProgressReport;
 use App\Models\Student;
 use App\Models\TherapySession;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -67,8 +69,47 @@ class NavCountsController extends Controller
                     ->whereHas('sender', fn ($q) => $q->where('role', Role::Guardian->value))
                     ->count(),
             ],
+            'finance' => $this->finance(),
             'staff' => ['total' => User::active()->count(), 'attention' => 0],
         ];
+    }
+
+    /**
+     * Overdue invoices, not outstanding ones.
+     *
+     * Every family owes the current month for most of the month, so a badge
+     * counting what is outstanding would be permanently red and would teach
+     * the office to stop reading badges — including the ones that matter. Past
+     * its due date is the number somebody has to act on, and it is zero when
+     * the academy is up to date.
+     *
+     * Overdue is a stored column that nothing else ages — there is no cron on
+     * this host — so it is swept here, on the one read that happens on every
+     * screen. See Invoice::sweepOverdue.
+     *
+     * ---------------------------------------------------------------------
+     * Why the catch.
+     *
+     * This is the sidebar. It loads on every page the office opens, and it is
+     * the only count here that touches a table added after the academy went
+     * live. Between uploading a release over FTP and calling the migration
+     * endpoint there is a window — minutes, but real — where `invoices` does
+     * not exist yet; a bare query there would take the entire dashboard down,
+     * including the screen the migration is run from. A missing badge during
+     * that window is the correct failure. Anything worse than a missing table
+     * still surfaces, loudly, on /finance itself.
+     *
+     * @return array<string, int>
+     */
+    private function finance(): array
+    {
+        try {
+            Invoice::sweepOverdue();
+
+            return ['total' => 0, 'attention' => Invoice::where('status', 'overdue')->count()];
+        } catch (QueryException) {
+            return ['total' => 0, 'attention' => 0];
+        }
     }
 
     /** @return array<string, mixed> */

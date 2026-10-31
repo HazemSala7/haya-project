@@ -190,6 +190,13 @@ class StudentController extends Controller
             'grade' => ['nullable', 'string', 'max:40'],
             'enrolled_at' => ['required', 'date'],
             'status' => ['nullable', Rule::in(['active', 'paused', 'graduated', 'withdrawn'])],
+            /*
+             * What the family pays a month. The administration sets it; the
+             * specialists never see it. Null is a real answer — a child whose
+             * fee has not been agreed is skipped by the monthly run and named,
+             * rather than billed nothing and read as settled.
+             */
+            'monthly_fee' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'left_at' => ['nullable', 'date', 'after_or_equal:enrolled_at'],
             'notes' => ['nullable', 'string', 'max:4000'],
         ]);

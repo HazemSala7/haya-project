@@ -83,6 +83,13 @@ const ICONS: Record<string, (p: IconProps) => React.ReactElement> = {
       <path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" />
     </Icon>
   ),
+  money: (p) => (
+    <Icon {...p}>
+      <rect x="2.5" y="6" width="19" height="12" rx="2.5" />
+      <circle cx="12" cy="12" r="2.6" />
+      <path d="M6 9.5v5M18 9.5v5" />
+    </Icon>
+  ),
   settings: (p) => (
     <Icon {...p}>
       <circle cx="12" cy="12" r="3" />
@@ -153,6 +160,12 @@ const GROUPS: Group[] = [
   {
     label: "الإدارة",
     items: [
+      /*
+       * The office only. A specialist who knows which family has not paid is a
+       * specialist with a reason to treat two children differently — the API
+       * refuses her the same way, so this is not the only lock.
+       */
+      { count: "finance", href: "/finance", label: "المالية", icon: "money", roles: ["admin"] },
       { count: "staff", href: "/staff", label: "الحسابات", icon: "accounts", roles: ["admin"] },
       {
         href: "/settings",

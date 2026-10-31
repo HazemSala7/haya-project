@@ -169,6 +169,40 @@ function Tip({
  * ---------------------------------------------------------------------- */
 
 /**
+ * The date at one end of a time axis.
+ *
+ * Only the two ends are labelled, and both of them sit on the edge of the
+ * canvas — so a centred label spills half its width past it and the browser
+ * clips what hangs over. With short labels that was invisible; «٢٦ تشرين
+ * الأول» is wide enough to lose its second word, and «تشرين» on its own could
+ * be either of two months three weeks apart.
+ *
+ * So each end anchors inward: the label on the right grows leftwards, the one
+ * on the left grows rightwards, and neither can reach an edge.
+ *
+ * `direction` is written out rather than inherited because `text-anchor` is
+ * resolved against the inline direction and not against the geometry — under
+ * rtl, `start` is the right-hand end of the text. Both halves of that pair
+ * have to be stated together or the next person to read this has no way to
+ * tell which way round it goes, and getting it backwards clips the other end
+ * instead. It is rtl and not ltr because «٢٦ تشرين الأول» has to keep its day
+ * in front of its month, the way the rest of the app writes a date.
+ */
+function EndLabel({ x, y, text, inside }: { x: number; y: number; text: string; inside: number }) {
+  return (
+    <text
+      x={x}
+      y={y}
+      textAnchor={x > inside ? "start" : "end"}
+      className="fill-muted"
+      style={{ fontSize: 10, direction: "rtl" }}
+    >
+      {text}
+    </text>
+  );
+}
+
+/**
  * One or more series over time, with a crosshair.
  *
  * `yMax` is passed in rather than fitted whenever the scale means something on
@@ -368,19 +402,9 @@ export function LineChart({
             ))}
 
             {/* Only the ends are labelled — a date under every point is a wall. */}
-            <text x={x(0)} y={height - 8} textAnchor="middle" className="fill-muted" style={{ fontSize: 10 }}>
-              {labels[0]}
-            </text>
+            <EndLabel x={x(0)} y={height - 8} text={labels[0]} inside={width / 2} />
             {n > 1 && (
-              <text
-                x={x(n - 1)}
-                y={height - 8}
-                textAnchor="middle"
-                className="fill-muted"
-                style={{ fontSize: 10 }}
-              >
-                {labels[n - 1]}
-              </text>
+              <EndLabel x={x(n - 1)} y={height - 8} text={labels[n - 1]} inside={width / 2} />
             )}
           </svg>
         )}
@@ -505,19 +529,9 @@ export function StackedBars({
               );
             })}
 
-            <text x={cx(0)} y={height - 8} textAnchor="middle" className="fill-muted" style={{ fontSize: 10 }}>
-              {labels[0]}
-            </text>
+            <EndLabel x={cx(0)} y={height - 8} text={labels[0]} inside={width / 2} />
             {n > 1 && (
-              <text
-                x={cx(n - 1)}
-                y={height - 8}
-                textAnchor="middle"
-                className="fill-muted"
-                style={{ fontSize: 10 }}
-              >
-                {labels[n - 1]}
-              </text>
+              <EndLabel x={cx(n - 1)} y={height - 8} text={labels[n - 1]} inside={width / 2} />
             )}
           </svg>
         )}

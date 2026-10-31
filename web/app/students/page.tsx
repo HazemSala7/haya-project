@@ -236,6 +236,7 @@ function AddStudent({
     school: "",
     grade: "",
     enrolled_at: new Date().toISOString().slice(0, 10),
+    monthly_fee: "",
     notes: "",
   };
 
@@ -252,7 +253,16 @@ function AddStudent({
     setError(null);
 
     try {
-      await api("/students", { method: "POST", body: form });
+      await api("/students", {
+        method: "POST",
+        body: {
+          ...form,
+          // Left blank on purpose by an office that has not agreed a fee yet.
+          // Null rather than zero: the monthly run skips an unpriced child and
+          // names them, where a zero would read as settled.
+          monthly_fee: form.monthly_fee === "" ? null : Number(form.monthly_fee),
+        },
+      });
       setForm(empty);
       onDone();
       onClose();
@@ -308,6 +318,21 @@ function AddStudent({
 
           <Field label="المدرسة">
             <Input value={form.school} onChange={(e) => set("school", e.target.value)} />
+          </Field>
+
+          <Field
+            label="الاشتراك الشهري"
+            hint="اللي اتفقتوا عليه. اتركه فاضي إذا لسه ما تحدّد."
+            error={error?.for("monthly_fee")}
+          >
+            <Input
+              type="number"
+              min="0"
+              step="any"
+              value={form.monthly_fee}
+              onChange={(e) => set("monthly_fee", e.target.value)}
+              placeholder="400"
+            />
           </Field>
         </div>
 

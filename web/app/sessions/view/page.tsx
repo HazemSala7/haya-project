@@ -51,11 +51,15 @@ export default function SessionPage() {
 }
 
 /* -------------------------------------------------------------------------
- * The five questions
+ * The questions
  *
- * Named, ordered, and the same five every day. A single free textarea produces
- * "تمت الجلسة بنجاح" for a year; five questions get five answers, and the
+ * Named, ordered, and the same ones every day. A single free textarea produces
+ * "تمت الجلسة بنجاح" for a year; named questions get real answers, and the
  * mother reading them learns something she did not know.
+ *
+ * One list, used twice: the form above and the published report below are both
+ * built from it, so a question added here appears in what the family reads
+ * without anybody having to remember the second place.
  * ---------------------------------------------------------------------- */
 
 const BOXES = [
@@ -64,6 +68,22 @@ const BOXES = [
     label: "شو عملنا اليوم",
     placeholder: "الأنشطة اللي اشتغلتوا عليها، بالترتيب…",
     required: true,
+  },
+  {
+    /*
+     * The tools, asked as its own question rather than left inside «شو عملنا».
+     *
+     * Two readers need it. The specialist covering next week has to reproduce
+     * the session, and "اشتغلنا على أصوات الحروف" does not tell her whether
+     * that was with cards, a mirror or an app. And the mother being asked to
+     * practise at home needs to know what was in his hands when he managed it
+     * — half the home plans in this system fail because the thing is in the
+     * clinic and nobody said what it was.
+     */
+    key: "tools" as const,
+    label: "الأدوات المستخدمة",
+    placeholder: "بطاقات PECS، مرآة، صور متسلسلة، تطبيق على التابلت…",
+    required: false,
   },
   {
     key: "progress" as const,
@@ -192,6 +212,7 @@ function WriteReport({
   const [form, setForm] = useState({
     mood: session.mood ?? "",
     activities: session.activities ?? "",
+    tools: session.tools ?? "",
     progress: session.progress ?? "",
     difficulties: session.difficulties ?? "",
     home_plan: session.home_plan ?? "",
@@ -382,7 +403,7 @@ function WriteReport({
               </div>
             </Card>
 
-            {/* ---- the five boxes ---- */}
+            {/* ---- the boxes ---- */}
             <Card title="التقرير" hint="هاد اللي بيقرأه ولي الأمر — اكتبه كأنك بتحكيله">
               <div className="space-y-4 p-4">
                 {BOXES.map((box) => (
@@ -392,11 +413,19 @@ function WriteReport({
                     hint={
                       box.key === "home_plan"
                         ? "هاد الجزء الوحيد اللي الأهل بيقدروا يشتغلوا عليه — بدونه التقرير بينقرأ مرة وبس."
-                        : undefined
+                        : box.key === "tools"
+                          ? "عشان الأخصائية اللي بتغطّي الأسبوع الجاي تعيد نفس الجلسة، والأم تعرف شو كان بإيده."
+                          : undefined
                     }
                   >
                     <Textarea
-                      rows={box.key === "activities" || box.key === "home_plan" ? 4 : 3}
+                      rows={
+                        box.key === "activities" || box.key === "home_plan"
+                          ? 4
+                          : box.key === "tools"
+                            ? 2
+                            : 3
+                      }
                       value={form[box.key]}
                       onChange={(e) => set(box.key, e.target.value)}
                       placeholder={box.placeholder}

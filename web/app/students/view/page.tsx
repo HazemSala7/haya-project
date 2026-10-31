@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { ApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHead } from "@/components/shell";
-import { AttendanceBar, AttendanceTable, Figure } from "@/components/charts";
+import { AttendanceBar, AttendanceTable, Figure, GoalMeter } from "@/components/charts";
+import { AccountCard } from "@/components/finance";
 import {
   Badge,
   Button,
@@ -302,6 +303,16 @@ function StudentFile({ id }: { id: number }) {
                         )}
                       </div>
 
+                      {/*
+                        The two chips say where he started and where he is; the
+                        meter says how much of the goal that covers. A parent
+                        reading "١ ← ٣" has to know the target to make anything
+                        of it, and the target is not on this row.
+                      */}
+                      <div className="hidden w-[72px] shrink-0 sm:block">
+                        <GoalMeter progress={goal.trend?.progress ?? null} />
+                      </div>
+
                       <div className="flex flex-col items-end gap-1">
                         {isStaff && (
                           <span className="flex gap-2">
@@ -402,6 +413,22 @@ function StudentFile({ id }: { id: number }) {
               </ul>
             )}
           </Card>
+
+          {/*
+            ---- the account ----
+
+            The office and the family see the same list of months; the family's
+            is read-only. A specialist sees nothing at all — the request is not
+            even made, and the API would answer 404 if it were.
+
+            It sits under the therapy rather than over it. For the office this
+            is the second question about a child; for the mother who opened the
+            file to read about her son it must not be the first thing on the
+            page.
+          */}
+          {!can("specialist") && (
+            <AccountCard studentId={student.id} canTakeMoney={can("admin")} />
+          )}
         </div>
 
         {/* ---- rail ---- */}
@@ -1137,6 +1164,9 @@ function EditStudent({
       status: student.status ?? "active",
       left_at: student.left_at?.slice(0, 10) ?? "",
       notes: student.notes ?? "",
+      // A decimal column arrives as "400.00"; Number() keeps the box from
+      // showing zeros nobody typed, and an unpriced child's box stays empty.
+      monthly_fee: student.monthly_fee ? String(Number(student.monthly_fee)) : "",
     });
   }, [student]);
 
@@ -1152,7 +1182,14 @@ function EditStudent({
     try {
       await api(`/students/${student!.id}`, {
         method: "PUT",
-        body: { ...form, left_at: form.left_at || null },
+        body: {
+          ...form,
+          left_at: form.left_at || null,
+          // Empty means "no agreed fee", which is a real answer: the monthly
+          // run skips the child and names them. An empty string would be a
+          // zero, and a zero reads as settled on every screen.
+          monthly_fee: form.monthly_fee === "" ? null : Number(form.monthly_fee),
+        },
       });
       await onDone();
       onClose();
@@ -1235,6 +1272,21 @@ function EditStudent({
 
           <Field label="الصف">
             <Input value={form.grade ?? ""} onChange={(e) => set("grade", e.target.value)} />
+          </Field>
+
+          <Field
+            label="الاشتراك الشهري"
+            hint="فاضي = ما تحدّد، وبينتخطّى بإصدار الشهر"
+            error={error?.for("monthly_fee")}
+          >
+            <Input
+              type="number"
+              min="0"
+              step="any"
+              value={form.monthly_fee ?? ""}
+              onChange={(e) => set("monthly_fee", e.target.value)}
+              placeholder="400"
+            />
           </Field>
         </div>
 

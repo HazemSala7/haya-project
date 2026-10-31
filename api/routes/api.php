@@ -3,9 +3,11 @@
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\GoalController;
+use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NavCountsController;
 use App\Http\Controllers\Api\ProgressReportController;
@@ -52,6 +54,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     Route::get('students', [StudentController::class, 'index']);
     Route::get('students/{student}', [StudentController::class, 'show'])->whereNumber('student');
+
+    /*
+     * One child's account — the only part of the billing module a parent
+     * sees, and only for their own child. The gate is Student::readableBy,
+     * the same one every other student endpoint uses, and it answers 404 so
+     * that changing the id cannot be used to learn which children exist.
+     */
+    Route::get('billing/students/{student}', [BillingController::class, 'student'])->whereNumber('student');
 
     Route::get('sessions', [SessionController::class, 'index']);
     Route::get('sessions/{session}', [SessionController::class, 'show'])->whereNumber('session');
@@ -147,5 +157,59 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
         Route::get('settings', [StaffController::class, 'settings']);
         Route::put('settings', [StaffController::class, 'updateSettings']);
+
+        /*
+        |----------------------------------------------------------------------
+        | The money
+        |----------------------------------------------------------------------
+        |
+        | A monthly subscription per child, due on the first. Behind the office
+        | wall entirely: a specialist who knows which family has not paid is a
+        | specialist with a reason to treat two children differently.
+        |
+        | Issuing is a button, not a clock — there is no scheduler on this host
+        | — and pressing it twice charges nobody twice. See App\Services\Billing.
+        */
+        Route::get('billing/invoices', [BillingController::class, 'index']);
+        Route::get('billing/summary', [BillingController::class, 'summary']);
+
+        // The agreed monthly fee, on its own — the billing screen prices a
+        // child from a name and an id. See BillingController::fee.
+        Route::put('students/{student}/fee', [BillingController::class, 'fee'])->whereNumber('student');
+
+        Route::post('billing/issue', [BillingController::class, 'issue']);
+        Route::get('billing/invoices/{invoice}', [BillingController::class, 'show'])->whereNumber('invoice');
+        Route::put('billing/invoices/{invoice}', [BillingController::class, 'update'])->whereNumber('invoice');
+        Route::delete('billing/invoices/{invoice}', [BillingController::class, 'destroy'])->whereNumber('invoice');
+
+        Route::post('billing/invoices/{invoice}/pay', [BillingController::class, 'pay'])->whereNumber('invoice');
+        Route::delete('billing/payments/{payment}', [BillingController::class, 'removePayment'])->whereNumber('payment');
+
+        /*
+        |----------------------------------------------------------------------
+        | Maintenance
+        |----------------------------------------------------------------------
+        |
+        | Schema upgrades, on a host with no terminal to run them from. There
+        | is no SSH here and no cron a deploy can reach, so a release whose
+        | migrations cannot run is a release that answers 500 to the office.
+        |
+        | Behind the office wall AND behind a key file placed on the server by
+        | hand for the minutes a migration takes — without it both answer 404,
+        | which is what they do on every developer machine and on the server
+        | itself any day nobody is deploying. See MaintenanceController for
+        | why the missing input is the security model and not an oversight.
+        |
+        | Throttled: a loop of migrations is a good way to take a shared host
+        | down, and nobody needs to run one twice a second. Twelve a minute
+        | rather than a handful because a release legitimately spends several
+        | — status, migrate, status again — and the smoke test spends five
+        | more proving the door is shut; a ceiling that a correct deploy can
+        | hit is a ceiling people learn to work around.
+        */
+        Route::middleware('throttle:12,1')->group(function () {
+            Route::get('maintenance/status', [MaintenanceController::class, 'status']);
+            Route::post('maintenance/migrate', [MaintenanceController::class, 'migrate']);
+        });
     });
 });

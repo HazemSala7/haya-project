@@ -28,13 +28,14 @@ function check(label, condition, detail = "") {
   }
 }
 
-async function call(path, { method = "GET", body, token } = {}) {
+async function call(path, { method = "GET", body, token, headers = {} } = {}) {
   const res = await fetch(`${API}${path}`, {
     method,
     headers: {
       Accept: "application/json",
       ...(body ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -622,6 +623,44 @@ check(
 check(
   "and a count of what she has not opened",
   typeof momDash.children[0].unread_reports === "number",
+);
+
+/*
+ * The migration door.
+ *
+ * It is the one endpoint here that can change the shape of the database, so
+ * what is checked is that it is shut. The key is a file placed on the server
+ * by hand; on a developer machine there is none, and "no key on disk" has to
+ * be indistinguishable from "no such route" — otherwise probing tells you the
+ * route is real and only the secret is missing.
+ *
+ * Drop a line into `api/storage/maintenance.key` and the first two of these
+ * invert, which is exactly why the wrong-role checks are separate from them:
+ * those two must hold whether the door is open or shut.
+ */
+console.log("\n-- the migration door --");
+
+const keyed = { "X-Maintenance-Key": "not-the-key" };
+
+check(
+  "the migration endpoint is not there without a key",
+  (await call("/maintenance/status", { token: admin })).status === 404,
+);
+check(
+  "nor with the wrong one",
+  (await call("/maintenance/migrate", { method: "POST", token: admin, headers: keyed })).status === 404,
+);
+check(
+  "a specialist cannot reach it",
+  (await call("/maintenance/migrate", { method: "POST", token: rana, headers: keyed })).status === 403,
+);
+check(
+  "nor a parent",
+  (await call("/maintenance/migrate", { method: "POST", token: mom, headers: keyed })).status === 403,
+);
+check(
+  "and it is not open to the street",
+  (await call("/maintenance/migrate", { method: "POST", headers: keyed })).status === 401,
 );
 
 /* ---------------------------------------------------------------------- */

@@ -14,6 +14,8 @@ import {
   SESSION_TONES,
   SPECIALTY_LABELS,
   dayDate,
+  fullDate,
+  monthDay,
   number,
   percent,
   relative,
@@ -37,20 +39,10 @@ const SPECIALTY_COLOR: Record<string, string> = {
   special_ed: "var(--viz-special-ed)",
 };
 
-const MONTHS = [
-  "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
-  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
-];
-
-function weekLabel(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
-}
+const weekLabel = monthDay;
 
 function today(): string {
-  const days = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-  const d = new Date();
-  return `${days[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  return fullDate(new Date().toISOString());
 }
 
 /**
