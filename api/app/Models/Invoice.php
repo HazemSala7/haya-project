@@ -23,6 +23,10 @@ class Invoice extends Model
     protected $fillable = [
         'number', 'student_id', 'period', 'due_on',
         'amount', 'discount', 'total', 'paid', 'status', 'note', 'created_by',
+        // من أين جاء هذا الصفّ: `zaid` ومفتاحه هناك. بدونهما في
+        // `$fillable` لا يستطيع المُستورِد كتابتهما، فتصير كل تشغيلةٍ
+        // طبقةً جديدة من نفس الأطفال.
+        'source', 'source_id',
     ];
 
     protected function casts(): array

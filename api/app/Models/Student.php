@@ -17,6 +17,10 @@ class Student extends Model
         'diagnosis', 'diagnosis_notes', 'medical_alert',
         'school', 'grade', 'enrolled_at', 'status', 'left_at', 'notes',
         'monthly_fee',
+        // من أين جاء هذا الصفّ: `zaid` ومفتاحه هناك. بدونهما في
+        // `$fillable` لا يستطيع المُستورِد كتابتهما، فتصير كل تشغيلةٍ
+        // طبقةً جديدة من نفس الأطفال.
+        'source', 'source_id',
     ];
 
     protected function casts(): array

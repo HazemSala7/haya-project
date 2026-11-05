@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/core.dart';
 import 'child_detail_screen.dart';
+import 'statement_screen.dart';
 
 /*
  * What a mother opens at ten at night.
@@ -32,7 +33,8 @@ class GuardianHomeScreen extends ConsumerWidget {
         final messages = J.int0(data['unread_messages']);
         final unread = children.fold<int>(0, (n, c) => n + J.int0(c['unread_reports']));
 
-        return RefreshIndicator(
+        return HeroPage(
+          child: RefreshIndicator(
           onRefresh: () => reload(ref, dashboardProvider.future),
           child: ListView(
             padding: EdgeInsets.zero,
@@ -75,11 +77,18 @@ class GuardianHomeScreen extends ConsumerWidget {
                             builder: (_) => ChildDetailScreen(studentId: J.int0(child['id'])),
                           ))
                           .then((_) => reload(ref, dashboardProvider.future)),
+                      onStatement: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => StatementScreen(
+                          studentId: J.int0(child['id']),
+                          studentName: J.s(child['name']),
+                        ),
+                      )),
                     ),
                   ),
 
               const SizedBox(height: 28),
             ],
+          ),
           ),
         );
       },
@@ -109,10 +118,13 @@ class GuardianHomeScreen extends ConsumerWidget {
 
 /// One child, whole.
 class _ChildCard extends StatelessWidget {
-  const _ChildCard({required this.child, required this.onTap});
+  const _ChildCard({required this.child, required this.onTap, required this.onStatement});
 
   final Map<String, dynamic> child;
   final VoidCallback onTap;
+
+  /// كشف الحساب — one tap from the home page, not three.
+  final VoidCallback onStatement;
 
   @override
   Widget build(BuildContext context) {
@@ -245,8 +257,30 @@ class _ChildCard extends StatelessWidget {
                     ),
                 ],
 
+                const SizedBox(height: 8),
+                const Divider(height: 1, color: AppColors.lineSoft),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: onTap,
+                        icon: const Icon(Icons.folder_open_rounded, size: 17),
+                        label: const Text('الملف والتقارير'),
+                      ),
+                    ),
+                    Container(width: 1, height: 22, color: AppColors.lineSoft),
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: onStatement,
+                        icon: const Icon(Icons.receipt_long_rounded, size: 17),
+                        label: const Text('كشف الحساب'),
+                      ),
+                    ),
+                  ],
+                ),
+
                 if (last != null) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 2),
                   Row(
                     children: [
                       const Icon(Icons.history_rounded, size: 15, color: AppColors.faint),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/records.dart';
+import '../motion.dart';
 import '../theme.dart';
 import 'ui.dart';
 
@@ -105,15 +106,30 @@ class PagedListState<T> extends State<PagedList<T>> {
 
     if (_items.isEmpty) {
       if (_loading) {
-        rows.add(const AppLoading());
+        // The shape of the list, not a spinner in the middle of nothing: the
+        // page does not jump when the rows land on top of it.
+        rows.add(const SkeletonList(padding: EdgeInsets.only(top: 6)));
       } else if (_error != null) {
         rows.add(AppError(error: _error!, onRetry: _loadMore));
       } else {
         rows.add(widget.empty ?? const AppEmpty(title: 'ما في شي هون'));
       }
     } else {
+      /*
+       * The rows arrive one behind the other.
+       *
+       * Keyed by the filter and the position, so rows already on screen do
+       * not animate again when the next page lands — and every row does
+       * animate when a chip changes what the list is.
+       */
       for (var i = 0; i < _items.length; i++) {
-        rows.add(widget.itemBuilder(context, _items[i]));
+        rows.add(
+          Reveal.at(
+            i,
+            key: ValueKey('${widget.filterKey}/$i'),
+            child: widget.itemBuilder(context, _items[i]),
+          ),
+        );
         if (i < _items.length - 1) rows.add(SizedBox(height: widget.separator));
       }
 

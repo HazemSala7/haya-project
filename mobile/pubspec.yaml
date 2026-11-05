@@ -5,7 +5,7 @@ publish_to: 'none'
 # Android reads the left side as versionName and the right as versionCode. The
 # code has to climb on every build a phone is asked to install over an older
 # one, or the install is refused with no useful message.
-version: 1.0.0+1
+version: 1.1.1+2
 
 environment:
   sdk: ^3.11.5

@@ -16,6 +16,11 @@ class AccountScreen extends ConsumerWidget {
     return RefreshList(
       onRefresh: () => ref.read(sessionProvider.notifier).refreshUser(),
       children: [
+        AccountHeader(
+          name: user?.name ?? '',
+          subtitle: 'ولي أمر',
+          seed: user?.id ?? 0,
+        ),
         SectionCard(
           title: 'الحساب',
           child: Column(

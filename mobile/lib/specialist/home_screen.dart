@@ -40,7 +40,8 @@ class SpecialistHomeScreen extends ConsumerWidget {
         final oldest = J.str(stats['oldest_unwritten']);
         final messages = J.int0(stats['unread_messages']);
 
-        return RefreshIndicator(
+        return HeroPage(
+          child: RefreshIndicator(
           onRefresh: () => reload(ref, dashboardProvider.future),
           child: ListView(
             padding: EdgeInsets.zero,
@@ -127,6 +128,7 @@ class SpecialistHomeScreen extends ConsumerWidget {
 
               const SizedBox(height: 28),
             ],
+          ),
           ),
         );
       },

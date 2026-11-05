@@ -106,6 +106,7 @@ class Student {
     this.enrollments = const [],
     this.guardians = const [],
     this.archived = false,
+    this.monthlyFee,
   });
 
   final int id;
@@ -129,6 +130,12 @@ class Student {
   final List<Guardian> guardians;
   final bool archived;
 
+  /// What the family pays a month, or null for a child with no fee set.
+  ///
+  /// A decimal column: MySQL sends it as the string "300.00" and SQLite as a
+  /// number, which is why it is read through `J` like every other figure.
+  final double? monthlyFee;
+
   factory Student.fromJson(Map<String, dynamic> json) => Student(
         id: J.int0(json['id']),
         fileNumber: J.s(json['file_number']),
@@ -150,6 +157,7 @@ class Student {
         enrollments: J.list(json['enrollments'], Enrollment.fromJson),
         guardians: J.list(json['guardians'], Guardian.fromJson),
         archived: json['deleted_at'] != null,
+        monthlyFee: J.doubleOrNull(json['monthly_fee']),
       );
 }
 
@@ -799,5 +807,186 @@ class Account {
         isActive: json.containsKey('is_active') ? J.boolean(json['is_active']) : true,
         lastSeenAt: J.str(json['last_seen_at']),
         childrenCount: J.intOrNull(json['children_count']),
+      );
+}
+
+/// A month's bill for one child.
+///
+/// The academy charges a monthly subscription, due on the first, and the
+/// server computes `due` and the labels — so this model reads them rather
+/// than recomputing them. Two screens that each do their own arithmetic on
+/// `total - paid` are two screens that eventually disagree by a piastre, and
+/// the one a parent is looking at is the one that is wrong.
+class Invoice {
+  const Invoice({
+    required this.id,
+    required this.number,
+    required this.studentId,
+    required this.studentName,
+    required this.period,
+    required this.periodLabel,
+    required this.amount,
+    required this.discount,
+    required this.total,
+    required this.paid,
+    required this.due,
+    required this.status,
+    required this.statusLabel,
+    this.fileNumber,
+    this.dueOn,
+    this.note,
+    this.payments = const [],
+  });
+
+  final int id;
+  final String number;
+  final int studentId;
+  final String studentName;
+  final String? fileNumber;
+
+  /// The month it is for, as `YYYY-MM-01`.
+  final String period;
+  final String periodLabel;
+
+  final double amount;
+  final double discount;
+  final double total;
+  final double paid;
+
+  /// What is still owed — the server's figure, never `total - paid` here.
+  final double due;
+
+  /// draft | sent | partial | paid | overdue | void
+  final String status;
+  final String statusLabel;
+
+  final String? dueOn;
+  final String? note;
+  final List<Payment> payments;
+
+  bool get settled => due <= 0;
+
+  factory Invoice.fromJson(Map<String, dynamic> json) {
+    final student = J.map(json['student']) ?? const {};
+
+    return Invoice(
+      id: J.int0(json['id']),
+      number: J.s(json['number']),
+      studentId: J.int0(json['student_id']),
+      studentName: J.s(student['name']),
+      fileNumber: J.str(student['file_number']),
+      period: J.s(json['period']),
+      periodLabel: J.s(json['period_label']),
+      amount: J.doubleOrNull(json['amount']) ?? 0,
+      discount: J.doubleOrNull(json['discount']) ?? 0,
+      total: J.doubleOrNull(json['total']) ?? 0,
+      paid: J.doubleOrNull(json['paid']) ?? 0,
+      due: J.doubleOrNull(json['due']) ?? 0,
+      status: J.s(json['status']),
+      statusLabel: J.s(json['status_label']),
+      dueOn: J.str(json['due_on']),
+      note: J.str(json['note']),
+      payments: J.list(json['payments'], Payment.fromJson),
+    );
+  }
+}
+
+/// Money that actually arrived, against one invoice.
+/// One child's account: what the academy charges, what came in, what is left.
+///
+/// `GET /billing/students/{id}` answers with `{student, balance, invoices}` —
+/// a shape nothing in the app read correctly before: the screen was treating
+/// `data` as a list of invoices and `meta` as the totals, so the office's
+/// per-child account page drew an empty account for every child, always.
+///
+/// The parent reads this too, for her own child (the server allows her and
+/// refuses a specialist outright).
+class StudentAccount {
+  const StudentAccount({
+    required this.studentId,
+    required this.studentName,
+    required this.invoices,
+    this.fileNumber,
+    this.monthlyFee,
+    this.billed = 0,
+    this.paid = 0,
+    this.due = 0,
+    this.months = 0,
+    this.overdue = 0,
+  });
+
+  final int studentId;
+  final String studentName;
+  final String? fileNumber;
+
+  /// What the family pays a month, or null when nobody has set it.
+  final double? monthlyFee;
+
+  final double billed;
+  final double paid;
+  final double due;
+
+  /// How many months have been invoiced, and how many of them are late.
+  final int months;
+  final int overdue;
+
+  final List<Invoice> invoices;
+
+  bool get settled => due <= 0;
+
+  factory StudentAccount.fromJson(Map<String, dynamic> json) {
+    final student = J.map(json['student']) ?? const {};
+    final balance = J.map(json['balance']) ?? const {};
+
+    return StudentAccount(
+      studentId: J.int0(student['id']),
+      studentName: J.s(student['name']),
+      fileNumber: J.str(student['file_number']),
+      monthlyFee: J.doubleOrNull(student['monthly_fee']),
+      billed: J.doubleOrNull(balance['billed']) ?? 0,
+      paid: J.doubleOrNull(balance['paid']) ?? 0,
+      due: J.doubleOrNull(balance['due']) ?? 0,
+      months: J.int0(balance['months']),
+      overdue: J.int0(balance['overdue']),
+      // The invoices come without the child on them — they are all his. The
+      // name is put back here so a row can say whose invoice it is without
+      // every screen having to carry the child alongside it.
+      invoices: J.list(
+        json['invoices'],
+        (row) => Invoice.fromJson({...row, 'student': student}),
+      ),
+    );
+  }
+}
+
+class Payment {
+  const Payment({
+    required this.id,
+    required this.receiptNo,
+    required this.amount,
+    required this.paidOn,
+    required this.method,
+    this.reference,
+    this.note,
+  });
+
+  final int id;
+  final String receiptNo;
+  final double amount;
+  final String paidOn;
+
+  /// cash | transfer | cheque | card
+  final String method;
+  final String? reference;
+  final String? note;
+
+  factory Payment.fromJson(Map<String, dynamic> json) => Payment(
+        id: J.int0(json['id']),
+        receiptNo: J.s(json['receipt_no']),
+        amount: J.doubleOrNull(json['amount']) ?? 0,
+        paidOn: J.s(json['paid_on']),
+        method: J.s(json['method']),
+        reference: J.str(json['reference']),
+        note: J.str(json['note']),
       );
 }

@@ -665,6 +665,53 @@ check(
 
 /* ---------------------------------------------------------------------- */
 
+console.log("\n-- the sync door --");
+
+/*
+ * The one door on this API with no signed-in person behind it: a cron job on
+ * qadrs.com pushes the old system's rows through it. Everything else is
+ * reachable only with a session, so this is the only place where the guard
+ * being wrong would not be noticed by anybody failing to log in.
+ *
+ * It answers 404 rather than 401 on purpose — "unauthorised" tells whoever is
+ * probing the host that there is something here worth more tries.
+ */
+check(
+  "the sync door is not there without a token",
+  (await call("/sync/zaid", { method: "POST", body: { kind: "schema", tables: [] } })).status === 404,
+);
+check(
+  "nor with the wrong one",
+  (
+    await call("/sync/zaid", {
+      method: "POST",
+      body: { kind: "schema", tables: [] },
+      headers: { Authorization: "Bearer not-the-token" },
+    })
+  ).status === 404,
+);
+check(
+  "a signed-in admin is not a sync client either",
+  (await call("/sync/zaid", { method: "POST", token: admin, body: { kind: "schema", tables: [] } })).status === 404,
+);
+
+check("the office can read what arrived", (await call("/sync/status", { token: admin })).status === 200);
+check(
+  "a specialist cannot",
+  (await call("/sync/status", { token: rana })).status === 403,
+);
+check("nor a parent", (await call("/sync/status", { token: mom })).status === 403);
+check(
+  "and the token is not rotated from the street",
+  (await call("/sync/token", { method: "POST" })).status === 401,
+);
+check(
+  "nor by a specialist",
+  (await call("/sync/token", { method: "POST", token: rana })).status === 403,
+);
+
+/* ---------------------------------------------------------------------- */
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 
 if (fail) {

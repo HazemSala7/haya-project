@@ -21,6 +21,10 @@ class TherapySession extends Model
         'scheduled_at', 'duration_minutes', 'status', 'absence_reason',
         'mood', 'activities', 'tools', 'progress', 'difficulties', 'home_plan',
         'private_notes', 'report_status', 'published_at',
+        // من أين جاء هذا الصفّ: `zaid` ومفتاحه هناك. بدونهما في
+        // `$fillable` لا يستطيع المُستورِد كتابتهما، فتصير كل تشغيلةٍ
+        // طبقةً جديدة من نفس الأطفال.
+        'source', 'source_id',
     ];
 
     /**

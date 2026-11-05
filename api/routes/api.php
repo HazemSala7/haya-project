@@ -14,9 +14,24 @@ use App\Http\Controllers\Api\ProgressReportController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\StudentController;
+use App\Http\Controllers\Api\SyncController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/login', [AuthController::class, 'login']);
+
+/*
+|--------------------------------------------------------------------------
+| المزامنة من النظام القديم
+|--------------------------------------------------------------------------
+|
+| يدفع `tools/zaid-sync/haya_sync.php` من استضافة qadrs.com إلى هنا. خارج
+| `auth:sanctum` لأن الطارق مهمّة cron لا شخص — وحسابُ مستخدمٍ لمهمّةٍ مجدولة
+| هو حسابٌ يستطيع تسجيل الدخول من متصفّح بلا سبب.
+|
+| الحارس توكنٌ واحد مخزَّن مُلبَّداً، وبلا توكنٍ مضبوط يردّ الباب ٤٠٤ كأنه غير
+| موجود. والخنق لأن جولةً كاملة عشرات الطلبات المشروعة، لا آلاف.
+*/
+Route::middleware('throttle:120,1')->post('sync/zaid', [SyncController::class, 'receive']);
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('auth/me', [AuthController::class, 'me']);
@@ -157,6 +172,16 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
         Route::get('settings', [StaffController::class, 'settings']);
         Route::put('settings', [StaffController::class, 'updateSettings']);
+
+        /*
+         * المزامنة — ما وصل ومتى، وتوليد التوكن.
+         *
+         * `rotate` يولّد ويعرض مرّة واحدة: سرٌّ يمكن عرضه متى شئت هو سرٌّ
+         * يبقى في لقطات الشاشة.
+         */
+        Route::get('sync/status', [SyncController::class, 'status']);
+        Route::post('sync/token', [SyncController::class, 'rotate']);
+        Route::delete('sync/token', [SyncController::class, 'disable']);
 
         /*
         |----------------------------------------------------------------------

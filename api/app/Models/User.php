@@ -19,6 +19,10 @@ class User extends Authenticatable
     protected $fillable = [
         'name', 'email', 'password', 'role', 'phone',
         'specialty', 'title', 'is_active',
+        // من أين جاء هذا الصفّ: `zaid` ومفتاحه هناك. بدونهما في
+        // `$fillable` لا يستطيع المُستورِد كتابتهما، فتصير كل تشغيلةٍ
+        // طبقةً جديدة من نفس الأطفال.
+        'source', 'source_id',
     ];
 
     protected $hidden = ['password', 'remember_token'];

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 /// A failed call, in a shape a screen can render.
 ///
@@ -44,8 +45,24 @@ class ApiException implements Exception {
         _ => false,
       };
 
+      /*
+       * «ما في اتصال بالإنترنت» was a lie half the time.
+       *
+       * `connectionError` is raised both when the phone has no network and
+       * when it has one and the server did not answer — a stopped server, a
+       * build pointing at a machine that is not there, the host down. Telling
+       * a person to check their internet while their internet is fine sends
+       * them to restart a router for nothing. The sentence now names both
+       * possibilities, and a debug build adds the address it actually tried,
+       * because the app is built against three of them (live, a laptop, an
+       * emulator's host) and which one is in a build is invisible otherwise.
+       */
+      final tried = kDebugMode ? ' (${error.requestOptions.uri.origin})' : '';
+
       return ApiException(
-        offline ? 'ما في اتصال بالإنترنت.' : 'تعذّر الوصول للخادم. جرّب كمان مرة.',
+        offline
+            ? 'ما وصلنا لخادم الأكاديمية. إمّا الإنترنت عندك، وإمّا الخادم مش رادّ.$tried'
+            : 'تعذّر الوصول للخادم. جرّب كمان مرة.$tried',
         isConnection: true,
       );
     }

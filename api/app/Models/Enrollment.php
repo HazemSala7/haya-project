@@ -14,6 +14,10 @@ class Enrollment extends Model
         'student_id', 'specialty', 'specialist_id',
         'sessions_per_week', 'session_minutes',
         'started_at', 'ended_at', 'status', 'plan_summary',
+        // من أين جاء هذا الصفّ: `zaid` ومفتاحه هناك. بدونهما في
+        // `$fillable` لا يستطيع المُستورِد كتابتهما، فتصير كل تشغيلةٍ
+        // طبقةً جديدة من نفس الأطفال.
+        'source', 'source_id',
     ];
 
     protected function casts(): array

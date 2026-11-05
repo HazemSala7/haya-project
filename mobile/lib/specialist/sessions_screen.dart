@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/core.dart';
+import '../shared/session_actions.dart';
 import 'session_report_screen.dart';
 
 /*
@@ -87,6 +88,20 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _Row(
                       session: shown[i],
+                      onMore: () => showActions(
+                        context,
+                        title: shown[i].student?.name ?? 'الجلسة',
+                        subtitle: Fmt.dateTime(shown[i].scheduledAt),
+                        actions: sessionActions(
+                          context,
+                          ref,
+                          shown[i],
+                          onChanged: () {
+                            reload(ref, sessionsProvider.future);
+                            reload(ref, dashboardProvider.future);
+                          },
+                        ),
+                      ),
                       onTap: () => Navigator.of(context)
                           .push(MaterialPageRoute(
                             builder: (_) => SessionReportScreen(
@@ -123,10 +138,11 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
 }
 
 class _Row extends StatelessWidget {
-  const _Row({required this.session, required this.onTap});
+  const _Row({required this.session, required this.onTap, required this.onMore});
 
   final TherapySession session;
   final VoidCallback onTap;
+  final VoidCallback onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +150,8 @@ class _Row extends StatelessWidget {
 
     return AppCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(14),
+      onLongPress: onMore,
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 6, 12),
       child: Row(
         children: [
           Column(
@@ -167,6 +184,7 @@ class _Row extends StatelessWidget {
           ),
 
           _badge(),
+          RowMenu(onTap: onMore),
         ],
       ),
     );

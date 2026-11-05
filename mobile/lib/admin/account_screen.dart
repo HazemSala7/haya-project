@@ -13,51 +13,57 @@ class AdminAccountScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(meProvider);
 
-    return RefreshList(
-      onRefresh: () => ref.read(sessionProvider.notifier).refreshUser(),
-      children: [
-        SectionCard(
-          title: 'الحساب',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              InfoRow(label: 'الاسم', value: user?.name),
-              InfoRow(label: 'البريد', value: user?.email, ltr: true),
-              if (user?.phone != null) InfoRow(label: 'الهاتف', value: user?.phone, ltr: true),
-            ],
+    // Its own bar: the shell carries none, so a tab that is not the home
+    // page says its own name.
+    return Scaffold(
+      appBar: AppBar(title: const Text('الحساب')),
+      body: RefreshList(
+        onRefresh: () => ref.read(sessionProvider.notifier).refreshUser(),
+        children: [
+          AccountHeader(
+            name: user?.name ?? '',
+            subtitle: 'إدارة الأكاديمية',
+            seed: user?.id ?? 0,
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-          child: OutlinedButton.icon(
-            onPressed: () => ref.read(sessionProvider.notifier).signOut(),
-            icon: const Icon(Icons.logout_rounded, size: 18),
-            label: const Text('تسجيل خروج'),
-            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+          SectionCard(
+            title: 'الحساب',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InfoRow(label: 'الاسم', value: user?.name),
+                InfoRow(label: 'البريد', value: user?.email, ltr: true),
+                if (user?.phone != null) InfoRow(label: 'الهاتف', value: user?.phone, ltr: true),
+              ],
+            ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+            child: OutlinedButton.icon(
+              onPressed: () => ref.read(sessionProvider.notifier).signOut(),
+              icon: const Icon(Icons.logout_rounded, size: 18),
+              label: const Text('تسجيل خروج'),
+              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+            ),
+          ),
 
-        /*
-         * Closing the account, quietly placed.
-         *
-         * Both stores require it to be reachable from inside the app, and
-         * neither requires it to be loud. It sits under signing out, in plain
-         * text rather than as a button, because the person who wants it will
-         * look for it and nobody else should meet it by accident.
-         */
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-          child: TextButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const DeleteAccountScreen()),
-            ),
-            child: Text(
-              'حذف الحساب',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.bad),
+          /*
+           * Closing the account, quietly placed.
+           *
+           * Both stores require it to be reachable from inside the app, and
+           * neither requires it to be loud. It sits under signing out, in
+           * plain text rather than as a button, because the person who wants
+           * it will look for it and nobody else should meet it by accident.
+           */
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+            child: TextButton(
+              onPressed: () =>
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DeleteAccountScreen())),
+              child: Text('حذف الحساب', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.bad)),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

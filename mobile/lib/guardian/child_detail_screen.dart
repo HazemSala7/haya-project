@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/core.dart';
+import 'statement_screen.dart';
 import 'report_screen.dart';
 
 /*
@@ -65,6 +66,39 @@ class ChildDetailScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
+
+                // The account, on the way to the sessions rather than
+                // buried under them: «شو علينا هالشهر؟» is the second thing a
+                // family opens this file for, and it used to be a phone call
+                // to the office.
+                const SizedBox(height: 14),
+                AppCard(
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => StatementScreen(
+                      studentId: studentId,
+                      studentName: student.name,
+                    ),
+                  )),
+                  child: Row(
+                    children: [
+                      const IconTile(Icons.receipt_long_rounded, tone: 'good'),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('كشف الحساب', style: Theme.of(context).textTheme.titleSmall),
+                            Text(
+                              'الرسوم، الفواتير، والمدفوع',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_left_rounded, color: AppColors.faint),
+                    ],
+                  ),
+                ),
 
                 const SizedBox(height: 18),
                 SectionTitle('سجلّ الجلسات'),

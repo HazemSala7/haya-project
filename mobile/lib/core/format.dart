@@ -314,6 +314,23 @@ abstract final class Labels {
     'withdrawn': 'muted',
   };
 
+  /// كيف وصلت الفلوس — نفس الأسماء التي تعرضها لوحة الويب، لا ترجمة ثانية
+  /// لها: إيصالٌ يقول «نقداً» على الشاشة و«كاش» على الجوال هو إيصالان.
+  static const payMethod = {
+    'cash': 'نقداً',
+    'transfer': 'حوالة بنكية',
+    'cheque': 'شيك',
+  };
+
+  static const invoiceTone = {
+    'paid': 'good',
+    'partial': 'warn',
+    'overdue': 'bad',
+    'void': 'muted',
+    'sent': 'brand',
+    'draft': 'muted',
+  };
+
   static const enrollmentStatus = {'active': 'شغّال', 'paused': 'موقوف مؤقتاً', 'ended': 'انتهى'};
 
   static const relation = {

@@ -18,6 +18,10 @@ class Payment extends Model
     protected $fillable = [
         'receipt_no', 'invoice_id', 'amount', 'paid_on',
         'method', 'reference', 'note', 'received_by',
+        // من أين جاء هذا الصفّ: `zaid` ومفتاحه هناك. بدونهما في
+        // `$fillable` لا يستطيع المُستورِد كتابتهما، فتصير كل تشغيلةٍ
+        // طبقةً جديدة من نفس الأطفال.
+        'source', 'source_id',
     ];
 
     protected function casts(): array

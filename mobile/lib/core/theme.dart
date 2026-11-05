@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'motion.dart';
+
 /// The academy's palette, copied by value from the web dashboard.
 ///
 /// There is no shared file to derive these from — the dashboard is CSS and
@@ -142,6 +144,21 @@ ThemeData buildTheme() {
     scaffoldBackgroundColor: AppColors.canvas,
     fontFamily: 'Cairo',
     splashFactory: InkSparkle.splashFactory,
+
+    /*
+     * How a screen gives way to the next.
+     *
+     * Android's default slides the whole page up from the bottom, which on a
+     * phone held in Arabic reads as a sheet being dragged over the page
+     * rather than as a step forward. iOS keeps its own: the edge-swipe back
+     * is part of the platform and overriding it would take that away.
+     */
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: FadeThroughTransitions(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      },
+    ),
 
     textTheme: TextTheme(
       displaySmall: ar(28, FontWeight.w800, AppColors.ink),

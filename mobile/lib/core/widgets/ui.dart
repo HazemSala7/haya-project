@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_exception.dart';
 import '../format.dart';
+import '../motion.dart';
 import '../theme.dart';
 
 /// A white panel on the tinted canvas. Defined once so thirty call sites
@@ -29,7 +31,9 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final body = Container(
+    final tappable = onTap != null || onLongPress != null;
+
+    Widget body = Container(
       decoration: BoxDecoration(
         color: color ?? AppColors.surface,
         borderRadius: AppShape.card,
@@ -47,6 +51,10 @@ class AppCard extends StatelessWidget {
         ),
       ),
     );
+
+    // A card that does something gives under the thumb. The ripple alone is
+    // under the finger that caused it and tells the person nothing.
+    if (tappable) body = Pressable(onTap: onTap, onLongPress: onLongPress, child: body);
 
     return margin == null ? body : Padding(padding: margin!, child: body);
   }
@@ -453,6 +461,42 @@ class AppEmpty extends StatelessWidget {
   }
 }
 
+
+/// Who is signed in, at the top of their own account page.
+///
+/// A disc with their initials, their name, and what the academy calls them —
+/// so the page opens with a person on it rather than with a form of three
+/// grey rows.
+class AccountHeader extends StatelessWidget {
+  const AccountHeader({super.key, required this.name, this.subtitle, this.seed = 0});
+
+  final String name;
+  final String? subtitle;
+  final int seed;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+
+    return Reveal(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+        child: Column(
+          children: [
+            Avatar(name: name, seed: seed, size: 84),
+            const SizedBox(height: 10),
+            Text(name, style: text.headlineSmall, textAlign: TextAlign.center),
+            if (subtitle != null && subtitle!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: ToneChip(subtitle!, tone: 'brand'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 /// A label and its value, the way every detail block lays one out.
 class InfoRow extends StatelessWidget {
   const InfoRow({super.key, required this.label, required this.value, this.ltr = false});
@@ -489,6 +533,11 @@ class InfoRow extends StatelessWidget {
 }
 
 /// One headline number with its caption.
+/// One figure, with the word for it.
+///
+/// The figure rolls up to its value when the tile arrives, and the tile is
+/// washed with a breath of its own tone — enough that a row of them reads as
+/// a set of different things rather than as five white boxes.
 class StatTile extends StatelessWidget {
   const StatTile({
     super.key,
@@ -498,6 +547,7 @@ class StatTile extends StatelessWidget {
     this.tone = 'brand',
     this.icon,
     this.onTap,
+    this.suffix = '',
   });
 
   final String label;
@@ -507,28 +557,52 @@ class StatTile extends StatelessWidget {
   final IconData? icon;
   final VoidCallback? onTap;
 
+  /// «٪» on a rate, a unit on a total.
+  final String suffix;
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final colour = AppColors.byName(tone);
+    final figure = text.headlineSmall?.copyWith(color: colour == AppColors.muted ? AppColors.ink : colour, height: 1.25);
+
+    // «—» and «٨» are different things: one is a number to roll, the other is
+    // the absence of one, and a count-up of nothing is a lie.
+    final number = num.tryParse(value);
 
     return AppCard(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.zero,
       onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (icon != null) ...[IconTile(icon!, tone: tone, size: 32), const SizedBox(width: 8)],
-              Expanded(
-                child: Text(label, style: text.labelMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
-              ),
-            ],
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: AppShape.card,
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [AppColors.softByName(tone).withValues(alpha: 0.55), AppColors.surface],
           ),
-          const SizedBox(height: 8),
-          Text(value, style: text.headlineSmall?.copyWith(color: AppColors.byName(tone) == AppColors.muted ? AppColors.ink : null)),
-          if (caption != null) Text(caption!, style: text.labelSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
-        ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                if (icon != null) ...[IconTile(icon!, tone: tone, size: 32), const SizedBox(width: 8)],
+                Expanded(
+                  child: Text(label, style: text.labelMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                ),
+                if (onTap != null) Icon(Icons.chevron_left_rounded, size: 18, color: AppColors.faint),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (number == null)
+              Text('$value$suffix', style: figure)
+            else
+              CountUp(number, suffix: suffix, style: figure),
+            if (caption != null) Text(caption!, style: text.labelSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+          ],
+        ),
       ),
     );
   }
@@ -576,6 +650,14 @@ class SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
       child: Row(
         children: [
+          // A short brand bar before the words: the eye finds where a section
+          // starts without the heading having to shout in bigger type.
+          Container(
+            width: 3,
+            height: 15,
+            margin: const EdgeInsetsDirectional.only(end: 8),
+            decoration: const BoxDecoration(color: AppColors.brand, borderRadius: AppShape.chip),
+          ),
           Text(title, style: Theme.of(context).textTheme.titleMedium),
           if (count != null) ...[
             const SizedBox(width: 6),
@@ -721,6 +803,130 @@ Future<bool> confirm(
   return result ?? false;
 }
 
+
+/* ------------------------------------------------------- row control */
+
+/// One thing a person may do to one record.
+class SheetAction {
+  const SheetAction({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.tone = 'brand',
+    this.hint,
+    this.disabledReason,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  /// `bad` for anything that destroys; the rest are the palette's words.
+  final String tone;
+
+  /// A line under the label — what it will actually do.
+  final String? hint;
+
+  /// Shown switched off with the reason under it, rather than hidden. A
+  /// missing button leaves the person guessing; «عليها دفعات — احذفها أول»
+  /// tells them what to do next.
+  final String? disabledReason;
+}
+
+/// Everything that can be done to one record, on one sheet.
+///
+/// The same sheet for a child, a session, an invoice and an account, opened
+/// the same way from every list: the ⋮ on the row, or a long press on it. A
+/// person who has learnt it once has learnt the whole app.
+Future<void> showActions(
+  BuildContext context, {
+  required String title,
+  String? subtitle,
+  required List<SheetAction> actions,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    // Nine actions on a supplier-sized record would otherwise have their
+    // last two — the dangerous ones — below the bottom of the screen.
+    isScrollControlled: true,
+    constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+    builder: (sheet) => SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 2, 20, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(sheet).textTheme.titleMedium),
+                  if (subtitle != null && subtitle.isNotEmpty)
+                    Text(subtitle, style: Theme.of(sheet).textTheme.bodySmall),
+                ],
+              ),
+            ),
+            for (final (i, action) in actions.indexed)
+              Reveal.at(
+                i,
+                child: ListTile(
+                  enabled: action.disabledReason == null,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                  leading: IconTile(
+                    action.icon,
+                    tone: action.disabledReason == null ? action.tone : 'muted',
+                    size: 38,
+                  ),
+                  title: Text(
+                    action.label,
+                    style: Theme.of(sheet).textTheme.titleSmall?.copyWith(
+                          color: action.disabledReason != null
+                              ? AppColors.faint
+                              : action.tone == 'bad'
+                                  ? AppColors.bad
+                                  : AppColors.ink,
+                        ),
+                  ),
+                  subtitle: action.disabledReason != null
+                      ? Text(action.disabledReason!, style: Theme.of(sheet).textTheme.bodySmall)
+                      : action.hint != null
+                          ? Text(action.hint!, style: Theme.of(sheet).textTheme.bodySmall)
+                          : null,
+                  onTap: () {
+                    Navigator.of(sheet).pop();
+                    action.onTap();
+                  },
+                ),
+              ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// The ⋮ at the end of a row.
+///
+/// Every list in this app puts one here, so «عدّل» and «احذف» are two taps
+/// from the row itself rather than behind opening the record first.
+class RowMenu extends StatelessWidget {
+  const RowMenu({super.key, required this.onTap, this.tooltip = 'تحكّم بالسجل'});
+
+  final VoidCallback onTap;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onTap,
+      visualDensity: VisualDensity.compact,
+      icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.muted),
+    );
+  }
+}
 /// A small note in a tinted box — "لسه ما وصل الأهل", "ناقص قبل الإرسال".
 class NoteBox extends StatelessWidget {
   const NoteBox(this.text, {super.key, this.tone = 'brand', this.icon});
@@ -894,6 +1100,73 @@ class HomeHero extends StatelessWidget {
   }
 }
 
+
+/// A page whose top is the teal hero band.
+///
+/// The clock and the battery live over that band, and the dark set the rest
+/// of the app asks for is nearly invisible on teal — so this flips them to
+/// white while the band is under them and back to dark once it has been
+/// scrolled away. Wrapping the scrollable rather than the band is the point:
+/// an annotation on the band itself keeps claiming the bar long after the
+/// band has gone off the top of the screen.
+class HeroPage extends StatefulWidget {
+  const HeroPage({super.key, required this.child, this.threshold = 90});
+
+  final Widget child;
+
+  /// How far the page scrolls before the bar is no longer over the band.
+  final double threshold;
+
+  @override
+  State<HeroPage> createState() => _HeroPageState();
+}
+
+class _HeroPageState extends State<HeroPage> {
+  var _onBand = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      sized: false,
+      value: (_onBand ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
+          .copyWith(statusBarColor: Colors.transparent),
+      child: NotificationListener<ScrollUpdateNotification>(
+        onNotification: (note) {
+          // Only the page's own scroll: a horizontal strip of chips inside it
+          // must not decide what colour the clock is.
+          if (note.metrics.axis != Axis.vertical) return false;
+          final onBand = note.metrics.pixels < widget.threshold;
+          if (onBand != _onBand) setState(() => _onBand = onBand);
+          return false;
+        },
+        child: Stack(
+          children: [
+            widget.child,
+            // Once the band is gone, the rows underneath would otherwise run
+            // up behind the clock. A wash the colour of the page, fading in
+            // exactly when the band leaves, gives them an edge to pass under.
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  opacity: _onBand ? 0 : 1,
+                  duration: Motion.medium,
+                  curve: Motion.enter,
+                  child: Container(
+                    height: MediaQuery.paddingOf(context).top,
+                    color: AppColors.canvas.withValues(alpha: 0.94),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 /// A single figure on the hero's own colour.
 class HeroFigure extends StatelessWidget {
   const HeroFigure({super.key, required this.value, required this.label});
