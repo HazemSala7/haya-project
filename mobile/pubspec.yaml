@@ -50,6 +50,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
 
 flutter:
   uses-material-design: true
@@ -72,3 +73,13 @@ flutter:
           weight: 700
         - asset: assets/fonts/Cairo.ttf
           weight: 800
+
+# Generates the app icons from the mark. Note before running it: the Android
+# side here is a hand-made adaptive icon (`mipmap-anydpi-v26/ic_launcher.xml`
+# + the `_foreground` layers), and this generator replaces it with flat
+# legacy icons.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/brand/mark.png"
+  remove_alpha_ios: true
