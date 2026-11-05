@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -51,24 +52,24 @@ abstract final class AppColors {
   /// A word from the app, a colour from the palette. Kept as words so a status
   /// is coloured the same way on every screen without each one choosing.
   static Color byName(String? tone) => switch (tone) {
-        'good' => good,
-        'warn' => warn,
-        'bad' => bad,
-        'info' => info,
-        'brand' => brand,
-        'leaf' => leaf,
-        _ => muted,
-      };
+    'good' => good,
+    'warn' => warn,
+    'bad' => bad,
+    'info' => info,
+    'brand' => brand,
+    'leaf' => leaf,
+    _ => muted,
+  };
 
   static Color softByName(String? tone) => switch (tone) {
-        'good' => goodSoft,
-        'warn' => warnSoft,
-        'bad' => badSoft,
-        'info' => infoSoft,
-        'brand' => brandSoft,
-        'leaf' => sageSoft,
-        _ => lineSoft,
-      };
+    'good' => goodSoft,
+    'warn' => warnSoft,
+    'bad' => badSoft,
+    'info' => infoSoft,
+    'brand' => brandSoft,
+    'leaf' => sageSoft,
+    _ => lineSoft,
+  };
 }
 
 /// The prompt scale, 0..4 — an ordinal ramp on one hue, validated on the web
@@ -87,19 +88,20 @@ abstract final class LevelColors {
 
   /// Ink on a swatch: the two lightest steps take dark ink, the rest white —
   /// computed from the step, so no swatch is ever white-on-pale.
-  static Color ink(int level) => level <= 1 ? const Color(0xFF04302B) : Colors.white;
+  static Color ink(int level) =>
+      level <= 1 ? const Color(0xFF04302B) : Colors.white;
 }
 
 /// The four programmes. Identity, so a categorical set — in the validated
 /// order; teal↔magenta and blue↔magenta are the pairs that fail if shuffled.
 abstract final class SpecialtyColors {
   static Color of(String? specialty) => switch (specialty) {
-        'speech' => const Color(0xFF00908B),
-        'occupational' => const Color(0xFFEB6834),
-        'behavioral' => const Color(0xFF2A78D6),
-        'special_ed' => const Color(0xFFC2559B),
-        _ => AppColors.leaf,
-      };
+    'speech' => const Color(0xFF00908B),
+    'occupational' => const Color(0xFFEB6834),
+    'behavioral' => const Color(0xFF2A78D6),
+    'special_ed' => const Color(0xFFC2559B),
+    _ => AppColors.leaf,
+  };
 }
 
 abstract final class AppShape {
@@ -112,7 +114,12 @@ abstract final class AppShape {
   /// calm app for a tired reader.
   static const cardShadow = [
     BoxShadow(color: Color(0x0D1B6A66), blurRadius: 2, offset: Offset(0, 1)),
-    BoxShadow(color: Color(0x171B6A66), blurRadius: 14, spreadRadius: -4, offset: Offset(0, 4)),
+    BoxShadow(
+      color: Color(0x171B6A66),
+      blurRadius: 14,
+      spreadRadius: -4,
+      offset: Offset(0, 4),
+    ),
   ];
 }
 
@@ -131,12 +138,12 @@ ThemeData buildTheme() {
    * mother reads at ten at night, set at reading sizes, not dashboard sizes.
    */
   TextStyle ar(double size, FontWeight weight, Color color) => TextStyle(
-        fontFamily: 'Cairo',
-        fontSize: size,
-        fontWeight: weight,
-        color: color,
-        height: 1.6,
-      );
+    fontFamily: 'Cairo',
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    height: 1.6,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -194,7 +201,11 @@ ThemeData buildTheme() {
       shape: RoundedRectangleBorder(borderRadius: AppShape.card),
     ),
 
-    dividerTheme: const DividerThemeData(color: AppColors.lineSoft, thickness: 1, space: 1),
+    dividerTheme: const DividerThemeData(
+      color: AppColors.lineSoft,
+      thickness: 1,
+      space: 1,
+    ),
 
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -263,14 +274,20 @@ ThemeData buildTheme() {
       labelTextStyle: WidgetStateProperty.resolveWith(
         (states) => ar(
           11.5,
-          states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
-          states.contains(WidgetState.selected) ? AppColors.brand : AppColors.muted,
+          states.contains(WidgetState.selected)
+              ? FontWeight.w700
+              : FontWeight.w500,
+          states.contains(WidgetState.selected)
+              ? AppColors.brand
+              : AppColors.muted,
         ),
       ),
       iconTheme: WidgetStateProperty.resolveWith(
         (states) => IconThemeData(
           size: 23,
-          color: states.contains(WidgetState.selected) ? AppColors.brand : AppColors.muted,
+          color: states.contains(WidgetState.selected)
+              ? AppColors.brand
+              : AppColors.muted,
         ),
       ),
     ),
